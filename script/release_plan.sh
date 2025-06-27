@@ -20,6 +20,9 @@ fi
 # Construct the next tag
 next_tag="v${major}.${minor}.${patch}"
 
+# Get the latest commit message
+latest_commit_message=$(git log -1 --pretty=%B)
+
 # Create the zip file
 mkdir -p release
 zip -r release/newrelic-oci-terraform.zip . -x ".git/*" ".github/*"
@@ -29,4 +32,5 @@ git tag "$next_tag"
 git push origin "$next_tag"
 
 # Create a release using GitHub CLI
-gh release create "$next_tag" release/newrelic-oci-terraform.zip --title "Release $next_tag" --notes "Automated release"
+release_heading="Release ${next_tag} - $(date +%Y-%m-%d)"
+gh release create "$next_tag" release/newrelic-oci-terraform.zip --title "$release_heading" --notes "Features\n$latest_commit_message"
