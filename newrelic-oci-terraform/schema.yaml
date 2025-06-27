@@ -1,0 +1,178 @@
+schemaVersion: 1.1.0
+version: "20190304"
+locale: "en"
+groupings:
+  - title: "New Relic Environment Configuration"
+    variables:
+      - newrelic_endpoint
+      - newrelic_api_key
+      - newrelic_user_api_key
+      - newrelic_account_id
+  - title: "New Relic Resource Configuration"
+    variables:
+      - dynamic_group_name
+      - newrelic_metrics_policy
+      - newrelic_function_app
+      - connector_hub_name
+      - function_app_shape
+      - metrics_namespaces
+
+variables:
+  tenancy_ocid:
+    type: string
+    title: Tenancy OCID
+    description: OCI tenant OCID, more details can be found at https://docs.cloud.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five
+    required: true
+    visible: false
+
+  current_user_ocid:
+    type: string
+    title: User OCID
+    description: The OCID of the current user executing the terraform script.
+    required: true
+    visible: false
+
+  region:
+    type: string
+    title: Region
+    description: OCI Region as documented at https://docs.cloud.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm
+    required: true
+    visible: false
+
+  compartment_ocid:
+    type: string
+    title: Compartment OCID
+    description: The OCID of the compartment where the resources will be created.
+    required: true
+    visible: false
+
+  dynamic_group_name:
+    type: string
+    title: New Relic Dynamic Group Name
+    description: The name of the dynamic group for giving access to the service connector
+    required: true
+    default: newrelic-metrics-dynamic-group
+
+  newrelic_metrics_policy:
+    type: string
+    title: New Relic Metrics Policy
+    description: The name of the policy for metrics
+    required: true
+    default: newrelic-metrics-policy
+
+  newrelic_endpoint:
+    type: string
+    title: New Relic Endpoint
+    description: The endpoint to hit for sending the metrics. Varies by region [US|EU]
+    required: true
+    default: https://metric-api.newrelic.com/metric/v1
+
+  newrelic_api_key:
+    type: string
+    title: New Relic API Key
+    description: The Ingest API key for sending metrics to New Relic endpoints
+    required: true
+    sensitive: true
+    password: true
+    confirmation: true
+
+  newrelic_user_api_key:
+    type: string
+    title: New Relic User API Key
+    description: The User API key for Linking the OCI Account to the New Relic account
+    required: true
+    sensitive: true
+    password: true
+    confirmation: true
+
+  newrelic_account_id:
+    type: string
+    title: New Relic Account ID
+    description: The New Relic Account ID for linking the OCI account to the New Relic account
+    required: true
+    sensitive: true
+    confirmation: true
+
+  newrelic_function_app:
+    type: string
+    title: New Relic Function App Name
+    description: The name of the function application
+    required: true
+    default: newrelic-metrics-function-app
+
+  connector_hub_name:
+    type: string
+    title:  New Relic Connector Hub Name
+    description: The prefix for the name of all of the resources
+    required: true
+    default: newrelic-metrics-connector-hub
+
+  function_app_shape:
+    type: string
+    title: Function App Shape
+    description: The shape of the function application. The docker image should be built accordingly. Use ARM if using Oracle Resource Manager stack
+    required: true
+    visible: false
+    default: GENERIC_X86
+
+  metrics_namespaces:
+    title: Metrics namespaces
+    type: enum
+    description: The list of namespaces to send metrics for, within their respective compartments. Remove any namespaces where metrics should not be sent.
+    required: true
+    additionalProps:
+      allowMultiple: true
+    default:
+      - "oci_apigateway"
+      - "oci_autonomous_database"
+      - "oci_blockstore"
+      - "oci_compute"
+      - "oci_compute_infrastructure_health"
+      - "oci_compute_instance_health"
+      - "oci_computeagent"
+      - "oci_database"
+      - "oci_database_cluster"
+      - "oci_faas"
+      - "oci_healthchecks"
+      - "oci_internet_gateway"
+      - "oci_lbaas"
+      - "oci_logging"
+      - "oci_nat_gateway"
+      - "oci_nlb"
+      - "oci_nlb_extended"
+      - "oci_nosql"
+      - "oci_objectstorage"
+      - "oci_oke"
+      - "oci_postgresql"
+      - "oci_service_connector_hub"
+      - "oci_service_gateway"
+      - "oci_vcn"
+      - "oci_vcnip"
+      - "oci_vmi_resource_utilization"
+    enum:
+      - "oci_apigateway"
+      - "oci_autonomous_database"
+      - "oci_blockstore"
+      - "oci_compute"
+      - "oci_compute_infrastructure_health"
+      - "oci_compute_instance_health"
+      - "oci_computeagent"
+      - "oci_database"
+      - "oci_database_cluster"
+      - "oci_faas"
+      - "oci_healthchecks"
+      - "oci_internet_gateway"
+      - "oci_lbaas"
+      - "oci_logging"
+      - "oci_nat_gateway"
+      - "oci_nlb"
+      - "oci_nlb_extended"
+      - "oci_nosql"
+      - "oci_objectstorage"
+      - "oci_oke"
+      - "oci_postgresql"
+      - "oci_service_connector_hub"
+      - "oci_service_gateway"
+      - "oci_vcn"
+      - "oci_vcnip"
+      - "oci_vmi_resource_utilization"

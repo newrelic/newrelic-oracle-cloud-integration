@@ -1,0 +1,27 @@
+name: Create Release Zip
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Ensure required tools are installed
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zip git gh
+
+      # Run the release script
+      - name: Execute release script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash script/release_plan.sh
