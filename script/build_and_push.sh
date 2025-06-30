@@ -21,7 +21,7 @@ echo "FUNCTION_BUILD_VERSION: ${FUNCTION_BUILD_VERSION}"
 
 # Validate essential environment variables are set
 if [ -z "${oci_auth_token}" ]; then
-  echo "Error: OCI_AUTH_TOKEN environment variable is not set."
+  echo "Error: ORACLE_AUTH_TOKEN environment variable is not set."
   exit 1
 fi
 if [ -z "${tenancy_namespace}" ]; then
