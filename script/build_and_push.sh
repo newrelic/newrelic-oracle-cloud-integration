@@ -3,7 +3,7 @@
 # --- Configuration Variables ---
 # Get values from environment variables passed by the CI/CD pipeline
 # It is critical that OCI_AUTH_TOKEN is passed securely via GitHub Secrets.
-oci_auth_token="${OCI_AUTH_TOKEN}"
+oci_auth_token="${ORACLE_AUTH_TOKEN}"
 # Generate function version dynamically
 FUNCTION_BUILD_VERSION=$(date +"%Y%m%d%H%M%S")
 # Mode and Region are now first and second arguments respectively
