@@ -244,7 +244,6 @@ data "oci_core_route_tables" "default_vcn_route_table" {
 
 # Resource to manage the VCN's default route table and add your rule
 resource "oci_core_default_route_table" "default_internet_route" {
-  # The ID of the default route table fetched by the data source
   manage_default_resource_id = data.oci_core_route_tables.default_vcn_route_table.route_tables[0].id
 
   depends_on = [

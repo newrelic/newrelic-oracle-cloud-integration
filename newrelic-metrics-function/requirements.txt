@@ -1,0 +1,5 @@
+fdk>=0.1.71
+requests
+newrelic_telemetry_sdk
+datetime
+oci
