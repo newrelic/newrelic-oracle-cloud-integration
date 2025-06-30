@@ -38,7 +38,7 @@ echo "--- Starting Docker Image Build and Push Automation (Mode: ${MODE}, Region
 # --- Build Phase ---
 echo "1. Building Docker image..."
 # Corrected: Specify the build context (the directory containing the Dockerfile)
-docker build --build-arg FUNCTION_BUILD_VERSION="${FUNCTION_BUILD_VERSION}" -t "${image_name}:${image_tag}" newrelic-oci-functions/
+docker build --build-arg FUNCTION_BUILD_VERSION="${FUNCTION_BUILD_VERSION}" -t "${image_name}:${image_tag}" newrelic-metrics-functions/
 
 if [ $? -ne 0 ]; then
     echo "Error: Docker image build failed."
