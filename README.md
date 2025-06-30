@@ -1,8 +1,4 @@
-[![New Relic Community header](https://opensource.newrelic.com/static/Community_Project-0c3079a4e4dbe2cbd05edc4f8e169d7b.png)](https://opensource.newrelic.com/oss-category/#new-relic-community)
-
-![GitHub forks](https://img.shields.io/github/forks/newrelic/newrelic-oracle-integration?style=social)
-![GitHub stars](https://img.shields.io/github/stars/newrelic/newrelic-oracle-integration?style=social)
-![GitHub watchers](https://img.shields.io/github/watchers/newrelic/newrelic-oracle-integration?style=social)
+[![Community Plus header](https://github.com/newrelic/opensource-website/raw/master/src/images/categories/Community_Plus.png)](https://opensource.newrelic.com/oss-category/#community-plus)
 
 # New Relic OCI Integrations
 

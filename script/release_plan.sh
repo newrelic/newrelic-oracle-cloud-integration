@@ -33,4 +33,4 @@ git push origin "$next_tag"
 
 # Create a release using GitHub CLI
 release_heading="newrelic-oci - ${next_tag}"
-gh release create "$next_tag" release/newrelic-oci-terraform.zip --title "$release_heading" --notes "Features\n$latest_commit_message"
+gh release create "$next_tag" release/newrelic-oci-terraform.zip --title "$release_heading" --notes "Features\n\n$latest_commit_message"
