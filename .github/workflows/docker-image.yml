@@ -14,7 +14,7 @@ on:
 jobs:
   # Job 1: Build Docker Image on PR Raise
   build_docker_image:
-    runs-on: code-scanning
+    runs-on: ubuntu-latest
     environment:
       name: build-test-env
     steps:
@@ -34,7 +34,7 @@ jobs:
 
   # Job 2: Push Docker Image on PR Merge
   push_docker_image:
-    runs-on: code-scanning
+    runs-on: ubuntu-latest
     needs: build_docker_image
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     strategy:
