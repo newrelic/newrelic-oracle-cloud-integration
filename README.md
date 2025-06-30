@@ -1,6 +1,6 @@
 [![Community Plus header](https://github.com/newrelic/opensource-website/raw/master/src/images/categories/Community_Plus.png)](https://opensource.newrelic.com/oss-category/#community-plus)
 
-# New Relic OCI Integrations
+# Shadaab's New Relic OCI Integrations
 
 This repository contains integrations to forward metrics and logs from Oracle Cloud Infrastructure (OCI).
 
