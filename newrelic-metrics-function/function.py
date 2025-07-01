@@ -29,7 +29,6 @@ tenancy_ocid = os.environ.get("TENANCY_OCID")
 forward_to_nr = eval(os.getenv('FORWARD_TO_NR'))
 # Function build version based on current datetime
 function_build_version = os.getenv("FUNCTION_BUILD_VERSION", "1.0")
-
 # OCI Vault related configurations
 vaul_region = os.getenv("VAULT_REGION")
 sec_ocid = os.getenv("SECRET_OCID")
