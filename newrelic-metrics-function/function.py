@@ -17,6 +17,7 @@ import oci.auth.signers
 
 # Initialize logger
 logger = logging.getLogger(__name__)
+
 # Output message version
 OUTPUT_MESSAGE_VERSION = "v1.0"
 # Determine if detailed logging is enabled based on environment variable
