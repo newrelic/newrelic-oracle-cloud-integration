@@ -40,7 +40,6 @@ jobs:
     strategy:
       matrix:
         region:
-          - us-phoenix-1
           - ap-hyderabad-1
     steps:
       - name: Checkout code

@@ -4,18 +4,18 @@ locale: "en"
 groupings:
   - title: "New Relic Environment Configuration"
     variables:
-      - newrelic_endpoint
-      - newrelic_api_key
-      - newrelic_user_api_key
-      - newrelic_account_id
+      - ${newrelic_endpoint}
+      - ${newrelic_api_key}
+      - ${newrelic_user_api_key}
+      - ${newrelic_account_id}
   - title: "New Relic Resource Configuration"
     variables:
-      - dynamic_group_name
-      - newrelic_metrics_policy
-      - newrelic_function_app
-      - connector_hub_name
-      - function_app_shape
-      - metrics_namespaces
+      - ${dynamic_group_name}
+      - ${newrelic_metrics_policy}
+      - ${newrelic_function_app}
+      - ${connector_hub_name}
+      - ${function_app_shape}
+      - ${metrics_namespaces}
 
 variables:
   tenancy_ocid:
