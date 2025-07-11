@@ -135,7 +135,7 @@ def _send_metrics_msg_to_newrelic(metrics_message) :
     if detailed_logging_enabled:
         logger.debug(f"Preparing to send metrics message to New Relic decode: {metrics_message}")
 
-    # Compress the metrics message using gzip
+    # Compress the metrics message using gzip.
     compressed_payload = gzip_json(metrics_message)
 
     if detailed_logging_enabled:
