@@ -20,6 +20,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y zip git gh
 
+      # Create a zip of the newrelic-oci-terraform directory
+      - name: Create zip
+        run: |
+          cd newrelic-oci-terraform
+          zip -r ../newrelic-oci-terraform.zip .
+
       # Run the release script
       - name: Execute release script
         env:
