@@ -41,6 +41,8 @@ jobs:
       matrix:
         region:
           - ap-hyderabad-1
+          - us-ashburn-1
+          - me-dubai-1
     steps:
       - name: Checkout code
         uses: actions/checkout@v3

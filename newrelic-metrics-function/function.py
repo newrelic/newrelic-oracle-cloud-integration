@@ -126,8 +126,8 @@ def _send_metrics_msg_to_newrelic(metrics_message) :
     :param metrics_message: Metrics message as a string
     :return: HTTP response text
     """
-    nr_ingest_key_vault = fetch_api_key_from_vault(sec_ocid, vaul_region)
-    nr_ingest_key = os.getenv("NR_INGEST_KEY", nr_ingest_key_vault)
+    #nr_ingest_key_vault = fetch_api_key_from_vault(sec_ocid, vaul_region)
+    nr_ingest_key = os.getenv("NR_INGEST_KEY")
 
     if not nr_metric_endpoint or not nr_ingest_key:
         raise ValueError("Missing environment variables: NR_METRIC_ENDPOINT or NR_INGEST_KEY")
