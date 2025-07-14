@@ -96,7 +96,7 @@ def _generate_metrics_msg(
                 "source_fn_call_id": ctx.CallID(),
                 "function_version": function_build_version
             },
-            "body": serialized_metric_data,
+            "body": json.loads(serialized_metric_data),
         },
     }
 
