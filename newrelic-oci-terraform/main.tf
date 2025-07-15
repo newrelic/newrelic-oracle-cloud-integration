@@ -156,7 +156,7 @@ resource "oci_functions_function" "metrics_function" {
 
   defined_tags  = {}
   freeform_tags = local.freeform_tags
-  image         = "${var.region}.ocir.io/axwxvhhpq8vn/public-newrelic-repo:latest"
+  image         = "${var.region}.ocir.io/idms1yfytybe/public-newrelic-repo:latest"
 }
 
 #Resource for the service connector hub-1
