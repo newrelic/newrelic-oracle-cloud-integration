@@ -122,7 +122,7 @@ def gzip_json(json_str):
 
 def _send_metrics_msg_to_newrelic(metrics_message) :
     """
-    Sends metrics message to New Relic..
+    Sends metrics message to New Relic.
     :param metrics_message: Metrics message as a string
     :return: HTTP response text
     """
