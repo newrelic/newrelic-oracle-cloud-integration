@@ -61,7 +61,7 @@ locals {
   vcn_name        = "newrelic-metrics-vcn"
   nat_gateway     = "${local.vcn_name}-natgateway"
   service_gateway = "${local.vcn_name}-servicegateway"
-  subnet          = "${local.vcn_name}-private-subnet"
+  subnet          = "${local.vcn_name}-public-subnet"
 }
 
 resource "oci_kms_vault" "newrelic_vault" {
@@ -193,7 +193,7 @@ resource "oci_sch_service_connector" "nr_service_connector" {
     kind = "functions"
 
     #Optional
-    batch_size_in_kbs = 5000
+    batch_size_in_kbs = 100
     batch_time_in_sec = 60
     compartment_id    = var.compartment_ocid
     function_id       = oci_functions_function.metrics_function.id
