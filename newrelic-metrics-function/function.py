@@ -77,7 +77,7 @@ def _generate_metrics_msg(
     Generates a metrics message.
     :param ctx: Invoke context
     :param serialized_metric_data: Serialized metric data
-    :return: Metrics message as a JSON string
+    :return: Metrics message as a JSON string.
     """
     if not tenancy_ocid:
         raise ValueError("Missing environment variable: TENANCY_OCID")
