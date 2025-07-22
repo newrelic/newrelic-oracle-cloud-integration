@@ -89,7 +89,7 @@ resource "oci_vault_secret" "api_key" {
   secret_name    = "NewRelicAPIKey"
   secret_content {
     content_type = "BASE64"
-    content      = base64encode(var.newrelic_api_key)
+    content      = base64encode(var.newrelic_ingest_api_key)
   }
   freeform_tags = local.freeform_tags
 }

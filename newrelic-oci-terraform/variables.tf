@@ -33,15 +33,15 @@ variable "newrelic_metrics_policy" {
 
 variable "newrelic_endpoint" {
   type        = string
-  default     = "https://metric-api.newrelic.com/metric/v1"
+  default     = "https://vortex.stg-bouncy-robot.cell.us.nr-data.net/oci/metric"
   description = "The endpoint to hit for sending the metrics. Varies by region [US|EU]"
   validation {
-    condition     = contains(["https://metric-api.newrelic.com/metric/v1", "https://metric-api.newrelic.com/metric/v1"], var.newrelic_endpoint)
+    condition     = contains(["https://staging-metric-api.newrelic.com/oci/metric", "https://vortex.stg-bouncy-robot.cell.us.nr-data.net/oci/metric"], var.newrelic_endpoint)
     error_message = "Valid values for var: newrelic_endpoint are (metric-api.newrelic.com, metric-api.eu.newrelic.com)."
   }
 }
 
-variable "newrelic_api_key" {
+variable "newrelic_ingest_api_key" {
   type        = string
   sensitive   = true
   description = "The Ingest API key for sending metrics to New Relic endpoints"

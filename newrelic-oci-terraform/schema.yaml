@@ -5,7 +5,7 @@ groupings:
   - title: "New Relic Environment Configuration"
     variables:
       - ${newrelic_endpoint}
-      - ${newrelic_api_key}
+      - ${newrelic_ingest_api_key}
       - ${newrelic_user_api_key}
       - ${newrelic_account_id}
   - title: "New Relic Resource Configuration"
@@ -65,11 +65,14 @@ variables:
     title: New Relic Endpoint
     description: The endpoint to hit for sending the metrics. Varies by region [US|EU]
     required: true
-    default: https://metric-api.newrelic.com/metric/v1
+    default: https://vortex.stg-bouncy-robot.cell.us.nr-data.net/oci/metric
+    enum:
+      - https://staging-metric-api.newrelic.com/oci/metric
+      - https://vortex.stg-bouncy-robot.cell.us.nr-data.net/oci/metric
 
-  newrelic_api_key:
+  newrelic_ingest_api_key:
     type: string
-    title: New Relic API Key
+    title: New Relic Ingest API Key
     description: The Ingest API key for sending metrics to New Relic endpoints
     required: true
     sensitive: true
