@@ -61,14 +61,16 @@ variables:
     default: newrelic-metrics-policy
 
   newrelic_endpoint:
-    type: string
+    type: enum
     title: New Relic Endpoint
     description: The endpoint to hit for sending the metrics. Varies by region [US|EU]
     required: true
-    default: https://vortex.stg-bouncy-robot.cell.us.nr-data.net/oci/metric
+    allowMultiple: false
+    default: newrelic-staging-metric-api
     enum:
-      - https://staging-metric-api.newrelic.com/oci/metric
-      - https://vortex.stg-bouncy-robot.cell.us.nr-data.net/oci/metric
+      - newrelic-staging-metric-api
+      - newrelic-metric-api
+      - newrelic-eu-metric-api
 
   newrelic_ingest_api_key:
     type: string

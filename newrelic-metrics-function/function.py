@@ -23,7 +23,18 @@ OUTPUT_MESSAGE_VERSION = "v1.0"
 # Determine if detailed logging is enabled based on environment variable
 detailed_logging_enabled = eval(os.environ.get("LOGGING_ENABLED"))
 # New Relic metric endpoint
-nr_metric_endpoint = os.getenv('NR_METRIC_ENDPOINT')
+nr_metric_endpoint_enum = os.getenv('NR_METRIC_ENDPOINT_ENUM', 'staging')
+
+# Determine the New Relic metric endpoint based on the environment variable
+if nr_metric_endpoint_enum == 'newrelic-staging-metric-api':
+    nr_metric_endpoint = 'https://vortex.stg-bouncy-robot.cell.us.nr-data.net/oci/metric'
+elif nr_metric_endpoint_enum == 'newrelic-metric-api':
+    nr_metric_endpoint = 'https://us-metric-api.newrelic.com/oci/metric'
+elif nr_metric_endpoint_enum == 'newrelic-eu-metric-api':
+    nr_metric_endpoint = 'https://eu-metric-api.newrelic.com/oci/metric'
+else:
+    raise ValueError(f"Unknown NR_METRIC_ENDPOINT: {nr_metric_endpoint_enum}")
+
 # Tenancy OCID
 tenancy_ocid = os.environ.get("TENANCY_OCID")
 # Flag to forward metrics to New Relic
