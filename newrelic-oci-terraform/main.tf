@@ -135,8 +135,8 @@ resource "oci_functions_application" "metrics_function_app" {
   depends_on     = [oci_identity_policy.nr_metrics_policy]
   compartment_id = var.compartment_ocid
   config = {
-    "FORWARD_TO_NR"                = "False"
-    "LOGGING_ENABLED"              = "True"
+    "FORWARD_TO_NR"                = "True"
+    "LOGGING_ENABLED"              = "False"
     "NR_METRIC_ENDPOINT"           = var.newrelic_endpoint
     "TENANCY_OCID"                 = var.compartment_ocid
     "SECRET_OCID"                  = oci_vault_secret.api_key.id
