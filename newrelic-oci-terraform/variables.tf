@@ -37,7 +37,7 @@ variable "newrelic_endpoint" {
   description = "The endpoint to hit for sending the metrics. Varies by region [US|EU]"
   validation {
     condition     = contains(["newrelic-staging-metric-api", "newrelic-metric-api", "newrelic-eu-metric-api"], var.newrelic_endpoint)
-    error_message = "Valid values for var: newrelic_endpoint are (newrelic-staging-metric-api, newrelic-metric-api, newrelic-eu-metric-api)."
+    error_message = "Valid values for var: newrelic_endpoint are (newrelic-staging-metric-api, newrelic-staging-vortex-metric-api, newrelic-metric-api, newrelic-eu-metric-api)."
   }
 }
 
@@ -57,6 +57,18 @@ variable "newrelic_account_id" {
   type        = string
   sensitive   = true
   description = "The New Relic account ID for sending metrics to New Relic endpoints"
+}
+
+variable "create_vcn" {
+  type        = bool
+  default     = true
+  description = "Variable to create virtual network for the setup. True by default"
+}
+
+variable "function_subnet_id" {
+  type        = string
+  default     = ""
+  description = "The OCID of the subnet to be used for the function app. If create_vcn is set to true, that will take precedence"
 }
 
 variable "newrelic_function_app" {

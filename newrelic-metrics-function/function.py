@@ -27,11 +27,13 @@ nr_metric_endpoint_enum = os.getenv('NR_METRIC_ENDPOINT_ENUM', 'staging')
 
 # Determine the New Relic metric endpoint based on the environment variable
 if nr_metric_endpoint_enum == 'newrelic-staging-metric-api':
-    nr_metric_endpoint = 'https://vortex.stg-bouncy-robot.cell.us.nr-data.net/oci/metric'
+    nr_metric_endpoint = 'https://staging-metric-api.newrelic.com/oci/metric'
+elif nr_metric_endpoint_enum == 'newrelic-staging-vortex-metric-api':
+    nr_metric_endpoint = 'https://vortex.stg-bouncy-robot.cell.eu.nr-data.net/oci/metric'
 elif nr_metric_endpoint_enum == 'newrelic-metric-api':
-    nr_metric_endpoint = 'https://us-metric-api.newrelic.com/oci/metric'
+    nr_metric_endpoint = 'https://metric-api.newrelic.com/oci/metric'
 elif nr_metric_endpoint_enum == 'newrelic-eu-metric-api':
-    nr_metric_endpoint = 'https://eu-metric-api.newrelic.com/oci/metric'
+    nr_metric_endpoint = 'https://metric-api.eu.newrelic.com/oci/metric'
 else:
     raise ValueError(f"Unknown NR_METRIC_ENDPOINT: {nr_metric_endpoint_enum}")
 
