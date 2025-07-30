@@ -4,8 +4,8 @@
 # Get values from environment variables passed by the CI/CD pipeline
 # It is critical that OCI_AUTH_TOKEN is passed securely via GitHub Secrets.
 oci_auth_token="${ORACLE_AUTH_TOKEN}"
-# Generate function version dynamically
-FUNCTION_BUILD_VERSION=$(date +"%Y%m%d%H%M%S")
+# Get function version
+function_build_version="${FUNCTION_BUILD_VERSION}"
 # Mode and Region are now first and second arguments respectively
 MODE=${1:-"full"} # First argument: "build-only" or "full". Defaults to "full".
 REGION=${2} # Second argument: The OCI region.
@@ -17,7 +17,7 @@ image_tag="${IMAGE_TAG:-latest}"
 username="${OCI_USERNAME}"
 
 # Debug: Print the function version
-echo "FUNCTION_BUILD_VERSION: ${FUNCTION_BUILD_VERSION}"
+echo "FUNCTION_BUILD_VERSION: ${function_build_version}"
 
 # Validate essential environment variables are set
 if [ -z "${oci_auth_token}" ]; then
@@ -33,12 +33,12 @@ if [ -z "${username}" ]; then
   exit 1
 fi
 
-echo "--- Starting Docker Image Build and Push Automation (Mode: ${MODE}, Region: ${REGION}, Version: ${FUNCTION_BUILD_VERSION}) ---"
+echo "--- Starting Docker Image Build and Push Automation (Mode: ${MODE}, Region: ${REGION}, Version: ${function_build_version}) ---"
 
 # --- Build Phase ---
 echo "1. Building Docker image..."
 # Corrected: Specify the build context (the directory containing the Dockerfile)
-docker build --build-arg FUNCTION_BUILD_VERSION="${FUNCTION_BUILD_VERSION}" -t "${image_name}:${image_tag}" newrelic-metrics-function/
+docker build --build-arg FUNCTION_BUILD_VERSION= "${function_build_version}" -t "${image_name}:${image_tag}" newrelic-metrics-function/
 
 if [ $? -ne 0 ]; then
     echo "Error: Docker image build failed."

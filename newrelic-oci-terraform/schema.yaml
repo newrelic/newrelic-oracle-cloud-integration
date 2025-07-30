@@ -5,9 +5,15 @@ groupings:
   - title: "New Relic Environment Configuration"
     variables:
       - ${newrelic_endpoint}
-      - ${newrelic_api_key}
+      - ${newrelic_ingest_api_key}
       - ${newrelic_user_api_key}
       - ${newrelic_account_id}
+  - title: "Network options"
+    variables:
+      - ${create_vcn}
+      - ${vcnCompartment}
+      - ${existingVcn}
+      - ${function_subnet_id}
   - title: "New Relic Resource Configuration"
     variables:
       - ${dynamic_group_name}
@@ -61,15 +67,21 @@ variables:
     default: newrelic-metrics-policy
 
   newrelic_endpoint:
-    type: string
+    type: enum
     title: New Relic Endpoint
     description: The endpoint to hit for sending the metrics. Varies by region [US|EU]
     required: true
-    default: https://metric-api.newrelic.com/metric/v1
+    allowMultiple: false
+    default: newrelic-staging-metric-api
+    enum:
+      - newrelic-staging-metric-api
+      - newrelic-staging-vortex-metric-api
+      - newrelic-metric-api
+      - newrelic-eu-metric-api
 
-  newrelic_api_key:
+  newrelic_ingest_api_key:
     type: string
-    title: New Relic API Key
+    title: New Relic Ingest API Key
     description: The Ingest API key for sending metrics to New Relic endpoints
     required: true
     sensitive: true
@@ -92,6 +104,37 @@ variables:
     required: true
     sensitive: true
     confirmation: true
+
+  create_vcn:
+    title: Create VCN
+    description: Create virtual network (VCN) for the function setup. If using existing networking resources, de-select "Create VCN" and select the relevant VCN and subnet to use.
+    type: boolean
+    default: true
+
+  vcnCompartment:
+    type: oci:identity:compartment:id
+    visible:
+      not:
+        - ${create_vcn}
+  existingVcn:
+    type: oci:core:vcn:id
+    visible:
+      not:
+          - ${create_vcn}
+    dependsOn:
+        compartmentId: ${vcnCompartment}
+  function_subnet_id:
+      title: Function Subnet OCID
+      type: oci:core:subnet:id
+      visible:
+        not:
+          - ${create_vcn}
+      description: The subnet to be used by the function app that will be deployed. If "Create VCN" is selected, the new VCN will overwrite this selection..
+      required: false
+      dependsOn:
+        compartmentId: ${vcnCompartment}
+        vcnId: ${existingVcn}
+
 
   newrelic_function_app:
     type: string
