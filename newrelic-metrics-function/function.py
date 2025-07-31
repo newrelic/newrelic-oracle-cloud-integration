@@ -4,7 +4,6 @@ import logging
 import os
 import gzip
 import base64
-import time
 
 from fdk import context, response
 import requests
@@ -12,7 +11,6 @@ from requests.adapters import HTTPAdapter
 from requests.exceptions import HTTPError
 
 import oci
-from oci.secrets.secrets_client import SecretsClient
 import oci.auth.signers
 
 # Initialize logger
@@ -57,25 +55,19 @@ _session.mount("https://", HTTPAdapter(pool_connections=_max_pool))
 def fetch_api_key_from_vault(secret_ocid, vault_region) -> str:
     try:
         # Create a resource principal authentication provider
-        rp = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+        signer = oci.auth.signers.get_resource_principals_signer()
 
-        # Create a SecretsClient using the RP provider
-        secrets_client = oci.secrets.SecretsClient(config={}, signer=rp)
+        secrets_client = oci.secrets.SecretsClient(config={}, signer=signer)
         secrets_client.base_client.set_region(vault_region)
 
-        # Set retry policy
-        retry_strategy = oci.retry.DEFAULT_RETRY_STRATEGY
-        secrets_client.base_client.retry_strategy = retry_strategy
+        secret_bundle = secrets_client.get_secret_bundle(secret_ocid).data
 
-        # Fetch the secret
-        sc_response = secrets_client.get_secret_bundle(secret_id=secret_ocid)
+        # Decode the Base64 encoded secret content
+        base64_secret_content = secret_bundle.secret_bundle_content.content
+        base64_bytes = base64_secret_content.encode('ascii')
+        message_bytes = base64.b64decode(base64_bytes)
+        decoded_secret = message_bytes.decode('ascii')
 
-        # Extract and decode the secret
-        secret_content = sc_response.data.secret_bundle_content
-        if not isinstance(secret_content, oci.secrets.models.Base64SecretBundleContentDetails) or secret_content.content is None:
-            raise ValueError("Secret content is nil")
-
-        decoded_secret = base64.b64decode(secret_content.content).decode('utf-8')
         return decoded_secret
 
     except Exception as e:
@@ -139,8 +131,7 @@ def _send_metrics_msg_to_newrelic(metrics_message) :
     :param metrics_message: Metrics message as a string
     :return: HTTP response text
     """
-    #nr_ingest_key_vault = fetch_api_key_from_vault(sec_ocid, vaul_region)
-    nr_ingest_key = os.getenv("NR_INGEST_KEY")
+    nr_ingest_key = fetch_api_key_from_vault(sec_ocid, vaul_region)
 
     if not nr_metric_endpoint or not nr_ingest_key:
         raise ValueError("Missing environment variables: NR_METRIC_ENDPOINT or NR_INGEST_KEY")
