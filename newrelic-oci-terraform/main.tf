@@ -100,14 +100,6 @@ resource "oci_vault_secret" "api_key" {
   freeform_tags = local.freeform_tags
 }
 
-resource "oci_kms_vault_replication" "vault_replica" {
-  provider       = oci.home
-  depends_on     = [oci_identity_policy.nr_metrics_policy]
-
-  vault_id       = oci_kms_vault.newrelic_vault.id
-  replica_region = "us-phoenix-1"
-}
-
 #Resource for the dynamic group
 resource "oci_identity_dynamic_group" "nr_serviceconnector_group" {
   count          = local.is_home_region ? 1 : 0
