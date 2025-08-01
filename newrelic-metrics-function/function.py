@@ -12,6 +12,9 @@ from requests.exceptions import HTTPError
 
 import oci
 import oci.auth.signers
+import threading
+import time
+import datetime
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -52,27 +55,35 @@ _session = requests.Session()
 # Mount the HTTP adapter to the session for better connection pooling
 _session.mount("https://", HTTPAdapter(pool_connections=_max_pool))
 
+_cached_api_key = None
+_cached_api_key_ts = 0
+_api_key_lock = threading.Lock()
+_CACHE_TTL_SECONDS = 3600  # 1 hour ttl
+
 def fetch_api_key_from_vault(secret_ocid, vault_region) -> str:
-    try:
-        # Create a resource principal authentication provider
-        signer = oci.auth.signers.get_resource_principals_signer()
+    global _cached_api_key, _cached_api_key_ts
+    now = time.time()
+    with _api_key_lock:
+        if _cached_api_key is not None and (now - _cached_api_key_ts) < _CACHE_TTL_SECONDS:
+            return _cached_api_key
+        try:
+            if detailed_logging_enabled:
+                logger.debug(
+                    f"Secret Vault Access time stamp: {datetime.datetime.now().isoformat(timespec='microseconds')} - "
+                    f"secret_ocid: {secret_ocid} in region: {vault_region}")
 
-        secrets_client = oci.secrets.SecretsClient(config={}, signer=signer)
-        secrets_client.base_client.set_region(vault_region)
-
-        secret_bundle = secrets_client.get_secret_bundle(secret_ocid).data
-
-        # Decode the Base64 encoded secret content
-        base64_secret_content = secret_bundle.secret_bundle_content.content
-        base64_bytes = base64_secret_content.encode('ascii')
-        message_bytes = base64.b64decode(base64_bytes)
-        decoded_secret = message_bytes.decode('ascii')
-
-        return decoded_secret
-
-    except Exception as e:
-        logging.error(f"Failed to fetch API key from vault: {e}")
-        raise RuntimeError(f"Failed to fetch API key from vault: {e}")
+            signer = oci.auth.signers.get_resource_principals_signer()
+            secrets_client = oci.secrets.SecretsClient(config={}, signer=signer)
+            secrets_client.base_client.set_region(vault_region)
+            secret_bundle = secrets_client.get_secret_bundle(secret_ocid).data
+            base64_secret_content = secret_bundle.secret_bundle_content.content
+            decoded_secret = base64.b64decode(base64_secret_content.encode('ascii')).decode('ascii')
+            _cached_api_key = decoded_secret
+            _cached_api_key_ts = now
+            return _cached_api_key
+        except Exception as e:
+            logger.error(f"Failed to fetch API key from vault: {e}")
+            raise RuntimeError(f"Failed to fetch API key from vault: {e}")
 
 def _generate_metrics_msg(
         ctx: context.InvokeContext,
