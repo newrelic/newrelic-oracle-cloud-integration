@@ -141,8 +141,8 @@ resource "oci_functions_application" "metrics_function_app" {
     "LOGGING_ENABLED"              = "False"
     "NR_METRIC_ENDPOINT"           = var.newrelic_endpoint
     "TENANCY_OCID"                 = var.compartment_ocid
-    "SECRET_OCID"                  = oci_vault_secret.api_key.id # TODO: To use the secret OCID of Home Region Vault
-    "VAULT_REGION"                 = var.region # TODO: Always to be home region
+    "SECRET_OCID"                  = oci_vault_secret.api_key.id # TODO: To use the secret OCID of Home Region Vault if Replication is enabled
+    "VAULT_REGION"                 = var.region # TODO: Always to be home region if replication is enabled
   }
   defined_tags               = {}
   display_name               = var.newrelic_function_app
