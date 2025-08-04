@@ -24,7 +24,7 @@ OUTPUT_MESSAGE_VERSION = "v1.0"
 # Determine if detailed logging is enabled based on environment variable
 detailed_logging_enabled = eval(os.environ.get("LOGGING_ENABLED"))
 # New Relic metric endpoint
-nr_metric_endpoint_enum = os.getenv('NR_METRIC_ENDPOINT_ENUM', 'staging')
+nr_metric_endpoint_enum = os.getenv('NR_METRIC_ENDPOINT', 'staging')
 
 # Determine the New Relic metric endpoint based on the environment variable
 if nr_metric_endpoint_enum == 'newrelic-staging-metric-api':
