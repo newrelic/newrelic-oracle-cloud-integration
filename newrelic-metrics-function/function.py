@@ -182,7 +182,7 @@ def handler(ctx: context.InvokeContext, data: io.BytesIO = None) -> response.Res
     Handler function for the function.
     :param ctx: Invoke context
     :param data: Input data
-    :return: Response
+    :return: Response.
     """
     if detailed_logging_enabled:
         logger.debug("Handler function started")

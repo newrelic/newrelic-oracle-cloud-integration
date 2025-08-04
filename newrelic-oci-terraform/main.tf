@@ -119,8 +119,6 @@ resource "oci_identity_policy" "nr_metrics_policy" {
   description    = "[DO NOT REMOVE] Policy to have any connector hub read from monitoring source and write to a target function"
   name           = var.newrelic_metrics_policy
   statements     = [
-    "Allow service keymanagementservice to manage vaults in tenancy",
-    "Allow service keymanagementservice to manage secret-bundles in tenancy",
     "Allow dynamic-group ${var.dynamic_group_name} to read metrics in tenancy",
     "Allow dynamic-group ${var.dynamic_group_name} to use fn-function in tenancy",
     "Allow dynamic-group ${var.dynamic_group_name} to use fn-invocation in tenancy",
