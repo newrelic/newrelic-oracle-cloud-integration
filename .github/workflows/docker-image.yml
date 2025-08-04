@@ -32,7 +32,7 @@ jobs:
       - name: Build Docker Image
         run: ./script/build_and_push.sh build-only ${{ env.DEFAULT_BUILD_REGION }}
         env:
-          DEFAULT_BUILD_REGION: ap-hyderabad-1
+          DEFAULT_BUILD_REGION: us-ashburn-1
           ORACLE_AUTH_TOKEN: ${{ secrets.ORACLE_AUTH_TOKEN }}
           OCI_TENANCY_NAMESPACE: ${{ secrets.OCI_TENANCY_NAMESPACE }}
           OCI_USERNAME: ${{ secrets.OCI_USERNAME }}
