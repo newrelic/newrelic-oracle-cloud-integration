@@ -170,5 +170,5 @@ output "vcn_network_details" {
 }
 
 output "stack_id" {
-  value = data.oci_resourcemanager_stacks.test_stack.stacks[0].id
+  value = data.oci_resourcemanager_stacks.current_stack.stacks[0].id
 }
