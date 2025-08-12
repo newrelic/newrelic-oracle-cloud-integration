@@ -45,6 +45,10 @@ resource "oci_functions_function" "metrics_function" {
   defined_tags   = {}
   freeform_tags = local.freeform_tags
   image          = "${var.region}.ocir.io/idms1yfytybe/public-newrelic-repo:latest"
+  provisioned_concurrency_config {
+    strategy = "CONSTANT"
+    count = 20
+  }
 }
 
 resource "oci_sch_service_connector" "nr_service_connector" {
