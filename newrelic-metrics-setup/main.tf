@@ -5,171 +5,56 @@ terraform {
       source  = "oracle/oci"
       version = "5.46.0"
     }
+    external = {
+      source  = "hashicorp/external"
+      version = "2.3.5"
+    }
   }
 }
 
-# Variables
 provider "oci" {
   alias        = "home"
   tenancy_ocid = var.tenancy_ocid
-  user_ocid    = data.oci_identity_user.current_user.user_id
   region       = var.region
 }
 
-data "oci_identity_user" "current_user" {
-  user_id = var.current_user_ocid
-}
-
-data "oci_identity_region_subscriptions" "subscriptions" {
-  tenancy_id = var.tenancy_ocid
-}
-
-data "oci_identity_tenancy" "current_tenancy" {
-  tenancy_id = var.tenancy_ocid
-}
-
-data "oci_identity_policies" "existing_policies" {
-  compartment_id = var.compartment_ocid
-}
-
-data "oci_identity_dynamic_groups" "existing_dynamic_groups" {
-  compartment_id = var.tenancy_ocid
-}
-
-data "oci_functions_applications" "existing_functions_apps" {
-  compartment_id = var.compartment_ocid
-}
-
-data "oci_core_subnet" "input_subnet" {
-  depends_on = [module.vcn]
-  #Required
-  subnet_id = var.create_vcn ? module.vcn[0].subnet_id[local.subnet] : var.function_subnet_id
-}
-
-locals {
-  home_region = [
-    for region in data.oci_identity_region_subscriptions.subscriptions.region_subscriptions : region.region_name
-    if region.is_home_region
-  ][0]
-  is_home_region = var.region == local.home_region
-  freeform_tags = {
-    newrelic-terraform = "true"
-  }
-  policy_not_exists = length([
-    for policy in data.oci_identity_policies.existing_policies.policies : policy.name
-    if policy.name == var.newrelic_metrics_policy
-  ]) == 0
-  dynamic_group_not_exists = length([
-    for dg in data.oci_identity_dynamic_groups.existing_dynamic_groups.dynamic_groups : dg.name
-    if dg.name == var.dynamic_group_name
-  ]) == 0
-  # Names for the network infra
-  vcn_name        = "newrelic-metrics-vcn"
-  nat_gateway     = "${local.vcn_name}-natgateway"
-  service_gateway = "${local.vcn_name}-servicegateway"
-  subnet          = "${local.vcn_name}-public-subnet"
-}
-
-resource "oci_kms_vault" "newrelic_vault" {
-  compartment_id = var.compartment_ocid
-  display_name   = "newrelic-vault"
-  vault_type     = "DEFAULT"
-  freeform_tags  = local.freeform_tags
-}
-
-resource "oci_kms_key" "newrelic_key" {
-  compartment_id = var.compartment_ocid
-  display_name   = "newrelic-key"
-  key_shape {
-    algorithm = "AES"
-    length    = 32
-  }
-  management_endpoint = oci_kms_vault.newrelic_vault.management_endpoint
-  freeform_tags       = local.freeform_tags
-}
-
-resource "oci_vault_secret" "api_key" {
-  compartment_id = var.compartment_ocid
-  vault_id       = oci_kms_vault.newrelic_vault.id
-  key_id         = oci_kms_key.newrelic_key.id
-  secret_name    = "NewRelicAPIKey"
-  secret_content {
-    content_type = "BASE64"
-    content      = base64encode(var.newrelic_ingest_api_key)
-  }
-  freeform_tags = local.freeform_tags
-}
-
-#Resource for the dynamic group
-resource "oci_identity_dynamic_group" "nr_serviceconnector_group" {
-  count          = local.is_home_region ? 1 : 0
-  compartment_id = var.tenancy_ocid
-  description    = "[DO NOT REMOVE] Dynamic group for service connector"
-  matching_rule  = "ANY {resource.type = 'serviceconnector', resource.type = 'fnfunc'}"
-  name           = var.dynamic_group_name
-  defined_tags   = {}
-  freeform_tags  = local.freeform_tags
-}
-
-#Resource for the policy
-resource "oci_identity_policy" "nr_metrics_policy" {
-  count          = local.is_home_region ? 1 : 0
-  depends_on     = [oci_identity_dynamic_group.nr_serviceconnector_group]
-  compartment_id = var.tenancy_ocid
-  description    = "[DO NOT REMOVE] Policy to have any connector hub read from monitoring source and write to a target function"
-  name           = var.newrelic_metrics_policy
-  statements     = [
-    "Allow dynamic-group ${var.dynamic_group_name} to read metrics in tenancy",
-    "Allow dynamic-group ${var.dynamic_group_name} to use fn-function in tenancy",
-    "Allow dynamic-group ${var.dynamic_group_name} to use fn-invocation in tenancy",
-    "Allow dynamic-group ${var.dynamic_group_name} to manage stream-family in tenancy",
-    "Allow dynamic-group ${var.dynamic_group_name} to manage repos in tenancy",
-    "Allow dynamic-group ${var.dynamic_group_name} to read secret-bundles in tenancy",
-  ]
-  defined_tags  = {}
-  freeform_tags = local.freeform_tags
-}
-
-#Resource for the function application
 resource "oci_functions_application" "metrics_function_app" {
-  depends_on     = [oci_identity_policy.nr_metrics_policy]
   compartment_id = var.compartment_ocid
   config = {
     "FORWARD_TO_NR"                = "True"
     "LOGGING_ENABLED"              = "False"
     "NR_METRIC_ENDPOINT"           = var.newrelic_endpoint
     "TENANCY_OCID"                 = var.compartment_ocid
-    "SECRET_OCID"                  = oci_vault_secret.api_key.id # TODO: To use the secret OCID of Home Region Vault if Replication is enabled
-    "VAULT_REGION"                 = var.region # TODO: Always to be home region if replication is enabled
+    "SECRET_OCID"                  = var.home_secret_ocid
+    "VAULT_REGION"                 = local.home_region
   }
   defined_tags               = {}
-  display_name               = var.newrelic_function_app
+  display_name               = "${var.nr_prefix}-metrics-function-app"
   freeform_tags              = local.freeform_tags
   network_security_group_ids = []
-  shape                      = var.function_app_shape
+  shape                      = "GENERIC_X86"
   subnet_ids = [
     data.oci_core_subnet.input_subnet.id,
   ]
 }
 
-#Resource for the function
 resource "oci_functions_function" "metrics_function" {
-  depends_on = [oci_functions_application.metrics_function_app]
-
   application_id = oci_functions_application.metrics_function_app.id
   display_name   = "${oci_functions_application.metrics_function_app.display_name}-metrics-function"
   memory_in_mbs  = "256"
-
-  defined_tags  = {}
+  defined_tags   = {}
   freeform_tags = local.freeform_tags
-  image         = "${var.region}.ocir.io/idms1yfytybe/public-newrelic-repo:latest"
+  image          = "${var.region}.ocir.io/idms1yfytybe/public-newrelic-repo:latest"
+  provisioned_concurrency_config {
+    strategy = "CONSTANT"
+    count = 20
+  }
 }
 
-#Resource for the service connector hub-1
 resource "oci_sch_service_connector" "nr_service_connector" {
   depends_on     = [oci_functions_function.metrics_function]
   compartment_id = var.compartment_ocid
-  display_name   = var.connector_hub_name
+  display_name   = "${var.nr_prefix}-connector-hub"
 
   # Source Configuration with Monitoring
   source {
@@ -206,7 +91,7 @@ resource "oci_sch_service_connector" "nr_service_connector" {
   }
 
   # Optional tags and additional metadata
-  description   = "Service Connector from Monitoring to Streaming"
+  description   = "[DO NOT DELETE] - Service Connector from Monitoring to Streaming"
   defined_tags  = {}
   freeform_tags = {}
 }
@@ -286,4 +171,8 @@ output "vcn_network_details" {
     sgw_route_id       = ""
     subnet_id          = var.function_subnet_id
   }
+}
+
+output "stack_id" {
+  value = data.oci_resourcemanager_stacks.current_stack.stacks[0].id
 }
