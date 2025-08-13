@@ -76,7 +76,7 @@ resource "null_resource" "newrelic_link_account" {
       # Main execution for cloudLinkAccount
       response=$(curl --silent --request POST \
         --url "${local.newrelic_graphql_endpoint}" \
-        --header "API-Key: ${local.newrelic_user_api_key}" \
+        --header "API-Key: ${var.newrelic_user_api_key}" \
         --header "Content-Type: application/json" \
         --header "User-Agent: insomnia/11.1.0" \
         --data '${jsonencode({
@@ -102,34 +102,6 @@ resource "null_resource" "newrelic_link_account" {
         exit 1
       fi
 
-     # Print the response
-      echo "Operation succeeded. Response: $response"
-
-      # Extract the 'id' value from the response
-      linked_account_id=$(echo "$response" | jq -r '.data.cloudLinkAccount.linkedAccounts[0].id // empty')
-      echo "linked_account_id: $linked_account_id"
-
-      # Check if 'id' was successfully extracted
-      if [ -z "$linked_account_id" ]; then
-        echo "Error: Failed to extract 'id' from the response." >&2
-        exit 1
-      fi
-
-      # Prepare the second GraphQL query dynamically
-      configAccount_graphql_query=$(jq -n --arg accountId "${local.newrelic_account_id}" --arg linkedAccountId "$linked_account_id" '{
-        query: "mutation { cloudConfigureIntegration(accountId: \($accountId), integrations: {oci: {ociMetadataAndTags: {linkedAccountId: \($linkedAccountId)}}}) { errors { message } integrations { id } } }"
-      }')
-
-      # Execute the second API call using the dynamically prepared query
-      second_response=$(curl --silent --request POST \
-        --url "${local.newrelic_graphql_endpoint}" \
-        --header "API-Key: ${local.newrelic_user_api_key}" \
-        --header "Content-Type: application/json" \
-        --header "User-Agent: insomnia/11.1.0" \
-        --data "$configAccount_graphql_query")
-
-      # Log the response from the second API call
-      echo "Configuration API Call Response: $second_response"
     EOT
   }
 }
