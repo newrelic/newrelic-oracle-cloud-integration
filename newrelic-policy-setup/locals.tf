@@ -10,9 +10,9 @@ locals {
   }
 
   newrelic_graphql_endpoint = "https://api.newrelic.com/graphql"
-  newrelic_account_id = 3631942
-  tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaajwhwjzag7c5vze6hq5metiowjsjbojglfn5zamh3vn4xdq5i2ppq"
-  newrelic_user_api_key = "NRAK-13R69O4RT5KLKYOVQ47S8REXJUE"
+  newrelic_account_id = var.newrelic_account_id
+  tenancy_ocid = var.tenancy_ocid
+  newrelic_user_api_key = var.newrelic_ingest_api_key
   linkAccount_graphql_query = <<EOF
    mutation {
     cloudLinkAccount(
