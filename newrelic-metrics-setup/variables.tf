@@ -45,35 +45,7 @@ variable "function_subnet_id" {
   description = "The OCID of the subnet to be used for the function app. If create_vcn is set to true, that will take precedence"
 }
 
-variable "metrics_namespaces" {
-  type        = list(string)
-  description = "The list of namespaces to send metrics for, within their respective compartments. Remove any namespaces where metrics should not be sent."
-  default = [
-    "oci_apigateway",
-    "oci_autonomous_database",
-    "oci_blockstore",
-    "oci_compute",
-    "oci_compute_infrastructure_health",
-    "oci_compute_instance_health",
-    "oci_computeagent",
-    "oci_database",
-    "oci_database_cluster",
-    "oci_faas",
-    "oci_healthchecks",
-    "oci_internet_gateway",
-    "oci_lbaas",
-    "oci_logging",
-    "oci_nat_gateway",
-    "oci_nlb",
-    "oci_nlb_extended",
-    "oci_nosql",
-    "oci_objectstorage",
-    "oci_oke",
-    "oci_postgresql",
-    "oci_service_connector_hub",
-    "oci_service_gateway",
-    "oci_vcn",
-    "oci_vcnip",
-    "oci_vmi_resource_utilization"
-  ]
+variable "payload_link" {
+    type        = string
+    description = "The link to the payload for the connector hubs."
 }

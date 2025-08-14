@@ -21,3 +21,11 @@ data "oci_resourcemanager_stacks" "current_stack" {
     regex  = true
   }
 }
+
+# The data source to execute the Python script
+data "external" "connector_hubs" {
+  program = ["python", "${path.module}/connector.py"]
+  query = {
+    "payload_link" = var.payload_link
+  }
+}
