@@ -51,26 +51,31 @@ resource "oci_functions_function" "metrics_function" {
   }
 }
 
-resource "oci_sch_service_connector" "nr_service_connector" {
-  depends_on     = [oci_functions_function.metrics_function]
-  compartment_id = var.compartment_ocid
-  display_name   = "${var.nr_prefix}-connector-hub"
+resource "oci_sch_service_connector" "service_connector" {
+  for_each = { for hub in local.connector_hubs_data : hub["name"] => hub }
 
-  # Source Configuration with Monitoring
+  compartment_id = var.tenancy_ocid
+  display_name   = each.value["name"]
+  description    = each.value["description"]
+  freeform_tags  = local.freeform_tags
+
   source {
     kind = "monitoring"
 
-    monitoring_sources {
-      compartment_id = var.compartment_ocid
-      namespace_details {
-        kind = "selected"
+    dynamic "monitoring_sources" {
+      for_each = each.value["compartments"]
+      content {
+        compartment_id = monitoring_sources.value["compartment_id"]
+        namespace_details {
+          kind = "selected"
 
-        dynamic "namespaces" {
-          for_each = var.metrics_namespaces
-          content {
-            namespace = namespaces.value
-            metrics {
-              kind = "all" // Adjust based on actual needs, possibly sum, mean, count
+          dynamic "namespaces" {
+            for_each = monitoring_sources.value["namespaces"]
+            content {
+              namespace = namespaces.value
+              metrics {
+                kind = "all"
+              }
             }
           }
         }
@@ -78,22 +83,13 @@ resource "oci_sch_service_connector" "nr_service_connector" {
     }
   }
 
-  # Target Configuration with Streaming
   target {
-    #Required
     kind = "functions"
-
-    #Optional
-    batch_size_in_kbs = 100
-    batch_time_in_sec = 60
-    compartment_id    = var.compartment_ocid
-    function_id       = oci_functions_function.metrics_function.id
+    function_id           = oci_functions_function.metrics_function.id
+    batch_size_in_kbs     = each.value["batch_size_in_kbs"]
+    compartment_id        = var.tenancy_ocid
+    batch_time_in_sec     = each.value["batch_time_in_sec"]
   }
-
-  # Optional tags and additional metadata
-  description   = "[DO NOT DELETE] - Service Connector from Monitoring to Streaming"
-  defined_tags  = {}
-  freeform_tags = {}
 }
 
 

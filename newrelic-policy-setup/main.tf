@@ -8,6 +8,7 @@ terraform {
   }
 }
 
+#Key Vault and Secret for New Relic Ingest API Key
 resource "oci_kms_vault" "newrelic_vault" {
   compartment_id = var.compartment_ocid
   display_name   = "newrelic-vault"

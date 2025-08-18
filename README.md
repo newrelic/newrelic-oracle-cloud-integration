@@ -52,19 +52,6 @@ Once the stack is created, metrics should be available in the New Relic portal. 
 FROM Metric SELECT * where metricName like '%oci%'
 ```
 
-### Service Connector
-
-Initially, the connector is created with default metric namespaces to collect metrics for. This can be configured by following the steps below:
-
-1. In the OCI Portal, under `Connectors`, select the newrelic metrics connector
-2. Select Edit
-3. Under `Configure Source -> Namespaces`, select or deselect specific namespaces of interest to collect metrics on.
-
-For details on specific metric namespaces and what metrics reside under each namespace, check Oracle's docs for a specific service/namespace. Examples:
-
-* [Compute](https://docs.oracle.com/en-us/iaas/Content/Compute/References/computemetrics.htm#Availabl)
-* [Database](https://docs.oracle.com/en/cloud/paas/base-database/available-metrics/index.html#articletitle)
-
 ### Metrics Function
 
 The following table lists available environment variables that can be set for the function:

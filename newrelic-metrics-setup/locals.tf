@@ -14,4 +14,9 @@ locals {
   service_gateway = "${local.vcn_name}-servicegateway"
   subnet          = "${local.vcn_name}-public-subnet"
 
+  # Iterate over the result map from the external data source.
+  connector_hubs_data = [
+    for key, value_str in data.external.connector_hubs.result : jsondecode(value_str)
+  ]
+
 }
