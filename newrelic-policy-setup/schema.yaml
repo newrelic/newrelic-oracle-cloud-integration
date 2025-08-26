@@ -11,11 +11,7 @@ groupings:
       - ${newrelic_ingest_api_key}
       - ${newrelic_user_api_key}
       - ${newrelic_account_id}
-  - title: "New Relic Metrics Resource Configuration"
-    variables:
-      - ${create_metrics_stack}
-      - ${dynamic_group_name}
-      - ${newrelic_metrics_policy}
+      - ${policy_stack}
 
 variables:
   tenancy_ocid:
@@ -46,22 +42,6 @@ variables:
     required: true
     visible: false
 
-  dynamic_group_name:
-    type: string
-    title: New Relic Dynamic Group Name
-    description: The name of the dynamic group for giving access to the service connector & Functions
-    required: true
-    default: newrelic-metrics-dynamic-group
-    visible: ${create_metrics_stack}
-
-  newrelic_metrics_policy:
-    type: string
-    title: New Relic Metrics Policy
-    description: The name of the policy for metrics for Function Invocations & Secrets
-    required: true
-    default: newrelic-metrics-policy
-    visible: ${create_metrics_stack}
-
   newrelic_ingest_api_key:
     type: string
     title: New Relic Ingest API Key
@@ -88,9 +68,9 @@ variables:
     sensitive: true
     confirmation: true
 
-  create_metrics_stack:
-    type: boolean
-    title: Create Metrics Stack
-    description: Whether to create the New Relic metrics stacks(Policies/Dynamic Groups) or not
+  policy_stack:
+    type: string
+    title: New Relic Policy Stack
+    description: A string of three characters (Y or N) to indicate which parts of the stack to deploy. First character is for Metrics, second for Logging, third for Common. For example, 'YYN' will deploy Metrics and Logging but not Common resources.
+    visible: true
     required: true
-    default: true
