@@ -60,33 +60,3 @@ resource "oci_identity_policy" "functions_vault_access_policy" {
     "Allow dynamic-group ${oci_identity_dynamic_group.all_functions_dg.name} to read secret-bundles in compartment id ${var.compartment_ocid}",
   ]
 }
-
-# KMS Vault for Ingest License Key
-resource "oci_kms_vault" "newrelic_vault" {
-  compartment_id = var.compartment_ocid
-  display_name   = "newrelic-vault"
-  vault_type     = "DEFAULT"
-}
-
-resource "oci_kms_key" "newrelic_key" {
-  compartment_id = var.compartment_ocid
-  display_name   = "newrelic-key"
-  key_shape {
-    algorithm = "AES"
-    length    = 32
-  }
-  management_endpoint = oci_kms_vault.newrelic_vault.management_endpoint
-}
-
-resource "oci_vault_secret" "api_key" {
-  compartment_id = var.compartment_ocid
-  vault_id       = oci_kms_vault.newrelic_vault.id
-  key_id         = oci_kms_key.newrelic_key.id
-  secret_name    = "NewRelicAPIKey"
-  description    = "Secret containing New Relic ingest API key"
-  secret_content {
-    content_type = "BASE64"
-    content      = base64encode(var.newrelic_ingest_api_key)
-    name         = "testkey"
-  }
-}
