@@ -29,15 +29,28 @@ resource "oci_kms_key" "newrelic_key" {
   freeform_tags       = local.freeform_tags
 }
 
-resource "oci_vault_secret" "api_key" {
+resource "oci_vault_secret" "ingest_api_key" {
   count = local.nr_common_stack ? 1 : 0
   compartment_id = var.compartment_ocid
   vault_id       = oci_kms_vault.newrelic_vault[count.index].id
   key_id         = oci_kms_key.newrelic_key[count.index].id
-  secret_name    = "NewRelicAPIKey"
+  secret_name    = "NewRelicIngestAPIKey"
   secret_content {
     content_type = "BASE64"
     content      = base64encode(var.newrelic_ingest_api_key)
+  }
+  freeform_tags = local.freeform_tags
+}
+
+resource "oci_vault_secret" "user_api_key" {
+  count = local.nr_common_stack ? 1 : 0
+  compartment_id = var.compartment_ocid
+  vault_id       = oci_kms_vault.newrelic_vault[count.index].id
+  key_id         = oci_kms_key.newrelic_key[count.index].id
+  secret_name    = "NewRelicUserAPIKey"
+  secret_content {
+    content_type = "BASE64"
+    content      = base64encode(var.newrelic_user_api_key)
   }
   freeform_tags = local.freeform_tags
 }
@@ -85,7 +98,7 @@ resource "oci_identity_policy" "nr_common_policy" {
 # Resource to link the New Relic account and configure the integration
 resource "null_resource" "newrelic_link_account" {
   count = local.nr_common_stack ? 1 : 0
-  depends_on = [oci_vault_secret.api_key, oci_identity_policy.nr_metrics_policy, oci_identity_dynamic_group.nr_service_connector_group]
+  depends_on = [oci_vault_secret.user_api_key,oci_vault_secret.ingest_api_key, oci_identity_policy.nr_metrics_policy, oci_identity_dynamic_group.nr_service_connector_group]
   provisioner "local-exec" {
     command = <<EOT
       # Main execution for cloudLinkAccount

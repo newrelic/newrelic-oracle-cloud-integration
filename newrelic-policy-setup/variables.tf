@@ -40,3 +40,27 @@ variable "policy_stack" {
   type        = string
   description = "A string of three characters (Y or N) to indicate which parts of the stack to deploy. First character is for Metrics, second for Logging, third for Common. For example, 'YYN' will deploy Metrics and Logging but not Common resources."
 }
+
+variable "client_id" {
+  type        = string
+  sensitive   = true
+  description = "Client ID for API access"
+}
+
+variable "client_secret" {
+  type        = string
+  sensitive   = true
+  description = "Client Secret for API access"
+}
+
+variable "oci_domain_url" {
+  type        = string
+  description = "OCI domain URL"
+}
+
+variable "svc_user_name" {
+  type        = string
+  sensitive   = true
+  description = "Service user name for OCI access"
+}
+

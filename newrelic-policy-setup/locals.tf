@@ -20,7 +20,7 @@ locals {
    mutation {
     cloudLinkAccount(
     accountId: ${var.newrelic_account_id},
-    accounts: {oci: {name: "nr_oci", tenantId: "${var.tenancy_ocid}"}}
+    accounts: {oci: {name: "nr_oci", tenantId: "${var.tenancy_ocid}", ingestKeyOcid: "${oci_vault_secret.ingest_api_key[0].id}", userKeyOcid: "${oci_vault_secret.user_api_key[0].id}", clientId: "${var.client_id}", clientSecret: "${var.client_secret}", ociDomainUrl: "${var.oci_domain_url}", svcUserName: "${var.svc_user_name}"}}
   ) {
     errors {
       linkedAccountId

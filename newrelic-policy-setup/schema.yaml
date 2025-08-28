@@ -12,6 +12,12 @@ groupings:
       - ${newrelic_user_api_key}
       - ${newrelic_account_id}
       - ${policy_stack}
+  - title: "OCI WIF Configuration"
+    variables:
+      - ${client_id}
+      - ${client_secret}
+      - ${oci_domain_url}
+      - ${svc_user_name}
 
 variables:
   tenancy_ocid:
@@ -74,3 +80,35 @@ variables:
     description: A string of three characters (Y or N) to indicate which parts of the stack to deploy. First character is for Metrics, second for Logging, third for Common. For example, 'YYN' will deploy Metrics and Logging but not Common resources.
     visible: true
     required: true
+
+  client_id:
+    type: string
+    title: Client ID
+    description: The Client ID for the OCI tenancy, needed for linking the OCI account to New Relic.
+    required: true
+    visible: true
+
+  client_secret:
+    type: string
+    title: Client Secret
+    description: The Client Secret for the OCI tenancy, needed for linking the OCI account to New Relic.
+    required: true
+    sensitive: true
+    password: true
+    confirmation: true
+
+  oci_domain_url:
+    type: string
+    title: OCI Domain URL
+    description: The OCI Domain URL, usually https://identity.<region>.oraclecloud.com
+    required: true
+    visible: true
+
+  svc_user_name:
+    type: string
+    title: Service User Name
+    description: The name of the service user created in OCI for New Relic to access the tenancy.
+    required: true
+    visible: true
+
+
