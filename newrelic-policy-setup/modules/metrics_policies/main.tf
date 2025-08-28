@@ -1,4 +1,4 @@
-# ------ Logs Only Resources -----
+# ------ Metrics Only Resources -----
 
 terraform {
   required_version = ">= 1.2.0"
@@ -17,12 +17,12 @@ provider "oci" {
   region       = var.region
 }
 
-resource "oci_identity_policy" "nr_logs_policy" {
+resource "oci_identity_policy" "nr_metrics_policy" {
   compartment_id = var.tenancy_ocid
-  description    = "[DO NOT REMOVE] Policy to have read logs for newrelic integration"
-  name           = var.newrelic_logs_policy
+  description    = "[DO NOT REMOVE] Policy to have read metrics for newrelic integration"
+  name           = var.newrelic_metrics_policy
   statements     = [
-    "Allow dynamic-group ${var.dynamic_group_name} to read log-content in tenancy"
+    "Allow dynamic-group ${var.dynamic_group_name} to read metrics in tenancy"
   ]
   defined_tags  = {}
   freeform_tags = var.freeform_tags

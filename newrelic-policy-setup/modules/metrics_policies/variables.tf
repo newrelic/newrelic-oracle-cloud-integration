@@ -9,10 +9,10 @@ variable "region" {
   default     = "us-ashburn-1"
 }
 
-variable "newrelic_logs_policy" {
+variable "newrelic_metrics_policy" {
   type        = string
-  description = "The name of the policy for logs"
-  default     = "newrelic-logs-policy"
+  description = "The name of the policy for metrics"
+  default     = "newrelic-metrics-policy"
 }
 
 variable "dynamic_group_name" {

@@ -8,101 +8,42 @@ terraform {
   }
 }
 
-#Key Vault and Secret for New Relic Ingest API Key
-resource "oci_kms_vault" "newrelic_vault" {
-  compartment_id = var.compartment_ocid
-  display_name   = "newrelic-vault"
-  vault_type     = "DEFAULT"
-  freeform_tags  = local.freeform_tags
+module "common_policies" {
+  count   = var.create_common_stack ? 1 : 0
+  source = "./modules/common_policies"
+
+  # Variables for common policies
+  tenancy_ocid = var.tenancy_ocid
+  compartment_ocid = var.compartment_ocid
+  newrelic_account_id = var.newrelic_account_id
+  newrelic_ingest_api_key = var.newrelic_license_key
+  newrelic_user_api_key      = var.newrelic_user_api_key
+  newrelic_common_policy = var.newrelic_common_policy
+  dynamic_group_name = var.dynamic_group_name
+  current_user_ocid = ""
+  linkAccount_graphql_query = ""
+  user_id = ""
 }
 
-resource "oci_kms_key" "newrelic_key" {
-  compartment_id = var.compartment_ocid
-  display_name   = "newrelic-key"
-  key_shape {
-    algorithm = "AES"
-    length    = 32
-  }
-  management_endpoint = oci_kms_vault.newrelic_vault.management_endpoint
-  freeform_tags       = local.freeform_tags
+module "logging_policies" {
+  count                = var.create_logs_stack ? 1 : 0
+  source               = "./modules/logging_policies"
+
+  # Variables for logging policies
+  tenancy_ocid         = var.tenancy_ocid
+  region               = var.region
+  newrelic_logs_policy = var.newrelic_logs_policy
+  dynamic_group_name   = var.dynamic_group_name
+  user_id              = data.oci_identity_user.current_user.user_id
 }
 
-resource "oci_vault_secret" "api_key" {
-  compartment_id = var.compartment_ocid
-  vault_id       = oci_kms_vault.newrelic_vault.id
-  key_id         = oci_kms_key.newrelic_key.id
-  secret_name    = "NewRelicAPIKey"
-  secret_content {
-    content_type = "BASE64"
-    content      = base64encode(var.newrelic_ingest_api_key)
-  }
-  freeform_tags = local.freeform_tags
-}
+module "metrics_policies" {
+  count              = local.is_home_region && var.create_metrics_stack ? 1 : 0
+  source             = "./modules/metrics_policies"
 
-#Resource for the dynamic group
-resource "oci_identity_dynamic_group" "nr_service_connector_group" {
-  count          = local.is_home_region && var.create_metrics_stack ? 1 : 0
-  compartment_id = var.tenancy_ocid
-  description    = "[DO NOT REMOVE] Dynamic group for service connector"
-  matching_rule  = "ANY {resource.type = 'serviceconnector', resource.type = 'fnfunc'}"
-  name           = var.dynamic_group_name
-  defined_tags   = {}
-  freeform_tags  = local.freeform_tags
-}
-
-#Resource for the policy
-resource "oci_identity_policy" "nr_metrics_policy" {
-  count          = local.is_home_region && var.create_metrics_stack ? 1 : 0
-  depends_on     = [oci_identity_dynamic_group.nr_service_connector_group]
-  compartment_id = var.tenancy_ocid
-  description    = "[DO NOT REMOVE] Policy to have any connector hub read from monitoring source and write to a target function"
-  name           = var.newrelic_metrics_policy
-  statements     = [
-    "Allow dynamic-group ${var.dynamic_group_name} to read metrics in tenancy",
-    "Allow dynamic-group ${var.dynamic_group_name} to use fn-function in tenancy",
-    "Allow dynamic-group ${var.dynamic_group_name} to use fn-invocation in tenancy",
-    "Allow dynamic-group ${var.dynamic_group_name} to manage stream-family in tenancy",
-    "Allow dynamic-group ${var.dynamic_group_name} to manage repos in tenancy",
-    "Allow dynamic-group ${var.dynamic_group_name} to read secret-bundles in tenancy",
-  ]
-  defined_tags  = {}
-  freeform_tags = local.freeform_tags
-}
-
-# Resource to link the New Relic account and configure the integration
-resource "null_resource" "newrelic_link_account" {
-  depends_on = [oci_vault_secret.api_key, oci_identity_policy.nr_metrics_policy, oci_identity_dynamic_group.nr_service_connector_group]
-  provisioner "local-exec" {
-    command = <<EOT
-      # Main execution for cloudLinkAccount
-      response=$(curl --silent --request POST \
-        --url "${local.newrelic_graphql_endpoint}" \
-        --header "API-Key: ${var.newrelic_user_api_key}" \
-        --header "Content-Type: application/json" \
-        --header "User-Agent: insomnia/11.1.0" \
-        --data '${jsonencode({
-          query = local.linkAccount_graphql_query
-        })}')
-
-      # Log the full response for debugging
-      echo "Full Response: $response"
-
-      # Extract errors from the response
-      root_errors=$(echo "$response" | jq -r '.errors[]?.message // empty')
-      account_errors=$(echo "$response" | jq -r '.data.cloudLinkAccount.errors[]?.message // empty')
-
-      # Combine errors
-      errors="$root_errors"$'\n'"$account_errors"
-
-      # Check if errors exist
-      if [ -n "$errors" ] && [ "$errors" != $'\n' ]; then
-        echo "Operation failed with the following errors:" >&2
-        echo "$errors" | while IFS= read -r error; do
-          echo "- $error" >&2
-        done
-        exit 1
-      fi
-
-    EOT
-  }
+  # Variables for metrics policies
+  tenancy_ocid       = var.tenancy_ocid
+  region             = var.region
+  dynamic_group_name = var.dynamic_group_name
+  user_id            = data.oci_identity_user.current_user.user_id
 }

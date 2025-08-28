@@ -40,6 +40,7 @@ resource "oci_functions_application" "metrics_function_app" {
 
 resource "oci_functions_function" "metrics_function" {
   application_id = oci_functions_application.metrics_function_app.id
+  depends_on = [oci_functions_application.metrics_function_app]
   display_name   = "${oci_functions_application.metrics_function_app.display_name}-metrics-function"
   memory_in_mbs  = "256"
   defined_tags   = {}
@@ -54,6 +55,7 @@ resource "oci_functions_function" "metrics_function" {
 resource "oci_sch_service_connector" "service_connector" {
   for_each = { for hub in local.connector_hubs_data : hub["name"] => hub }
 
+  depends_on = [oci_functions_function.metrics_function]
   compartment_id = var.tenancy_ocid
   display_name   = each.value["name"]
   description    = each.value["description"]

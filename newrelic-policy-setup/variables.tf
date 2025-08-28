@@ -30,6 +30,18 @@ variable "newrelic_metrics_policy" {
   default     = "newrelic-metrics-policy"
 }
 
+variable "newrelic_logs_policy" {
+  type        = string
+  description = "The name of the policy for logs"
+  default     = "newrelic-metrics-policy"
+}
+
+variable "newrelic_common_policy" {
+  type        = string
+  description = "The name of the policy for common policies"
+  default     = "newrelic-common-policy"
+}
+
 
 variable "newrelic_ingest_api_key" {
   type        = string
@@ -53,4 +65,16 @@ variable "create_metrics_stack" {
   type        = bool
   default     = true
   description = "Variable to create metrics stack resources. Set to false if you want to skip creating the metrics stack."
+}
+
+variable "create_logs_stack" {
+  type        = bool
+  default     = true
+  description = "Variable to create logs stack resources. Set to false if you want to skip creating the logs stack."
+}
+
+variable "create_common_stack" {
+  type        = bool
+  default     = true
+  description = "Variable to create common stack resources. Set to false if you want to skip creating the common stack."
 }
