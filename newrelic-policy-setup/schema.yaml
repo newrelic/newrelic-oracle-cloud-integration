@@ -84,14 +84,14 @@ variables:
   client_id:
     type: string
     title: Client ID
-    description: The Client ID for the OCI tenancy, needed for linking the OCI account to New Relic.
+    description: The Client ID for OCI tenancy, needed for metadata polling from New Relic.
     required: true
     visible: true
 
   client_secret:
     type: string
     title: Client Secret
-    description: The Client Secret for the OCI tenancy, needed for linking the OCI account to New Relic.
+    description: The Client Secret for the OCI tenancy, needed for metadata polling from New Relic.
     required: true
     sensitive: true
     password: true
