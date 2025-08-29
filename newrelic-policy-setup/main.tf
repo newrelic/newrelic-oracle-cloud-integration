@@ -80,6 +80,7 @@ resource "oci_identity_policy" "nr_metrics_policy" {
   freeform_tags = local.freeform_tags
 }
 
+#Resource for the logging policy
 resource "oci_identity_policy" "nr_logs_policy" {
   count          = local.nr_logging_stack ? 1 : 0
   depends_on     = [oci_identity_dynamic_group.nr_service_connector_group]
@@ -93,6 +94,7 @@ resource "oci_identity_policy" "nr_logs_policy" {
   freeform_tags = local.freeform_tags
 }
 
+#Resource for the metrics/Logging (Common) policies
 resource "oci_identity_policy" "nr_common_policy" {
   count          = local.is_home_region && local.nr_common_stack ? 1 : 0
   depends_on     = [oci_identity_dynamic_group.nr_service_connector_group]
