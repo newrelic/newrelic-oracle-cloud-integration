@@ -9,9 +9,10 @@ locals {
     newrelic-terraform = "true"
   }
   policy_stack_chars = split("", var.policy_stack)
-  nr_metrics_stack = local.policy_stack_chars[0] == "Y"
-  nr_logging_stack = local.policy_stack_chars[1] == "Y"
-  nr_common_stack = local.policy_stack_chars[2] == "Y"
+  newRelic_Metrics_Access_Policy = local.policy_stack_chars[0] == "Y"
+  newRelic_Logs_Access_Policy = local.policy_stack_chars[1] == "Y"
+  newRelic_Core_Integration_Policy = local.policy_stack_chars[2] == "Y"
+  newrelic_logs_policy     = "newrelic-logs-policy"
   newrelic_metrics_policy = "newrelic-metrics-policy"
   newrelic_common_policy  = "newrelic-common-policy"
   dynamic_group_name      = "newrelic-dynamic-group"

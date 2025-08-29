@@ -68,7 +68,7 @@ resource "oci_identity_dynamic_group" "nr_service_connector_group" {
 
 #Resource for the metrics policy
 resource "oci_identity_policy" "nr_metrics_policy" {
-  count          = local.is_home_region && local.nr_metrics_stack ? 1 : 0
+  count          = local.is_home_region && local.newRelic_Metrics_Access_Policy ? 1 : 0
   depends_on     = [oci_identity_dynamic_group.nr_service_connector_group]
   compartment_id = var.tenancy_ocid
   description    = "[DO NOT REMOVE] Policy to have read metrics for newrelic integration"
@@ -82,11 +82,11 @@ resource "oci_identity_policy" "nr_metrics_policy" {
 
 #Resource for the logging policy
 resource "oci_identity_policy" "nr_logs_policy" {
-  count          = local.nr_logging_stack ? 1 : 0
+  count          = local.newRelic_Logs_Access_Policy ? 1 : 0
   depends_on     = [oci_identity_dynamic_group.nr_service_connector_group]
   compartment_id = var.tenancy_ocid
   description    = "[DO NOT REMOVE] Policy to have read logs for newrelic integration"
-  name           = local.newrelic_metrics_policy
+  name           = local.newrelic_logs_policy
   statements     = [
     "Allow dynamic-group ${local.dynamic_group_name} to read log-content in tenancy"
   ]
@@ -96,7 +96,7 @@ resource "oci_identity_policy" "nr_logs_policy" {
 
 #Resource for the metrics/Logging (Common) policies
 resource "oci_identity_policy" "nr_common_policy" {
-  count          = local.is_home_region && local.nr_common_stack ? 1 : 0
+  count          = local.is_home_region && local.newRelic_Core_Integration_Policy ? 1 : 0
   depends_on     = [oci_identity_dynamic_group.nr_service_connector_group]
   compartment_id = var.tenancy_ocid
   description    = "[DO NOT REMOVE] Policy to have any connector hub read from monitoring source and write to a target function"
