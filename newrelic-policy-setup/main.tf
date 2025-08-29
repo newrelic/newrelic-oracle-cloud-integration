@@ -8,7 +8,7 @@ terraform {
   }
 }
 
-#Key Vault and Secret for New Relic Ingest API Key
+#Key Vault and Secret for New Relic Ingest and User API Key
 resource "oci_kms_vault" "newrelic_vault" {
   count = local.nr_common_stack ? 1 : 0
   compartment_id = var.compartment_ocid
