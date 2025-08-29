@@ -80,6 +80,19 @@ resource "oci_identity_policy" "nr_metrics_policy" {
   freeform_tags = local.freeform_tags
 }
 
+resource "oci_identity_policy" "nr_logs_policy" {
+  count          = local.nr_logging_stack ? 1 : 0
+  depends_on     = [oci_identity_dynamic_group.nr_service_connector_group]
+  compartment_id = var.tenancy_ocid
+  description    = "[DO NOT REMOVE] Policy to have read logs for newrelic integration"
+  name           = local.newrelic_metrics_policy
+  statements     = [
+    "Allow dynamic-group ${local.dynamic_group_name} to read log-content in tenancy"
+  ]
+  defined_tags  = {}
+  freeform_tags = local.freeform_tags
+}
+
 resource "oci_identity_policy" "nr_common_policy" {
   count          = local.is_home_region && local.nr_common_stack ? 1 : 0
   depends_on     = [oci_identity_dynamic_group.nr_service_connector_group]
