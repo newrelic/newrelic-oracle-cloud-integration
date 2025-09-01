@@ -38,7 +38,7 @@ variable "newrelic_account_id" {
 
 variable "policy_stack" {
   type        = string
-  description = "A string of three characters (Y or N) to indicate which parts of the stack to deploy. First character is for Metrics, second for Logging, third for Common. For example, 'YYN' will deploy Metrics and Logging but not Common resources."
+  description = "A string indicating which parts of the stack to deploy. Use comma-separated values from METRICS, LOGS, COMMON."
 }
 
 variable "client_id" {

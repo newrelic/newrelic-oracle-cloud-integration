@@ -50,8 +50,8 @@ variables:
 
   newrelic_ingest_api_key:
     type: string
-    title: New Relic Ingest API Key
-    description: The Ingest API key for sending metrics to New Relic endpoints
+    title: New Relic Ingest - Licence API Key
+    description: The Ingest Licence API key for sending metrics to New Relic endpoints
     required: true
     sensitive: true
     password: true
@@ -76,8 +76,8 @@ variables:
 
   policy_stack:
     type: string
-    title: New Relic Policy Stack
-    description: A string of three characters (Y or N) to indicate which parts of the stack to deploy. First character is for Metrics, second for Logging, third for Common. For example, 'YYN' will deploy Metrics and Logging but not Common resources.
+    title: New Relic Policy Instrumentation
+    description: A string indicating which parts of the stack to deploy. Use comma-separated values from METRICS, LOGS, COMMON.
     visible: true
     required: true
 
