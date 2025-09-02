@@ -18,19 +18,6 @@ variable "region" {
   description = "OCI Region as documented at https://docs.cloud.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm"
 }
 
-variable "dynamic_group_name" {
-  type        = string
-  description = "The name of the dynamic group for giving access to service connector"
-  default     = "newrelic-metrics-dynamic-group"
-}
-
-variable "newrelic_metrics_policy" {
-  type        = string
-  description = "The name of the policy for metrics"
-  default     = "newrelic-metrics-policy"
-}
-
-
 variable "newrelic_ingest_api_key" {
   type        = string
   sensitive   = true
@@ -49,8 +36,31 @@ variable "newrelic_account_id" {
   description = "The New Relic account ID for sending metrics to New Relic endpoints"
 }
 
-variable "create_metrics_stack" {
-  type        = bool
-  default     = true
-  description = "Variable to create metrics stack resources. Set to false if you want to skip creating the metrics stack."
+variable "policy_stack" {
+  type        = string
+  description = "A string indicating which parts of the stack to deploy. Use comma-separated values from METRICS, LOGS, COMMON."
 }
+
+variable "client_id" {
+  type        = string
+  sensitive   = true
+  description = "Client ID for API access"
+}
+
+variable "client_secret" {
+  type        = string
+  sensitive   = true
+  description = "Client Secret for API access"
+}
+
+variable "oci_domain_url" {
+  type        = string
+  description = "OCI domain URL"
+}
+
+variable "svc_user_name" {
+  type        = string
+  sensitive   = true
+  description = "Service user name for OCI access"
+}
+

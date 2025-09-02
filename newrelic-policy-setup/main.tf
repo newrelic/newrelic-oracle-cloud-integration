@@ -8,8 +8,9 @@ terraform {
   }
 }
 
-#Key Vault and Secret for New Relic Ingest API Key
+#Key Vault and Secret for New Relic Ingest and User API Key
 resource "oci_kms_vault" "newrelic_vault" {
+  count = local.newRelic_Core_Integration_Policy ? 1 : 0
   compartment_id = var.compartment_ocid
   display_name   = "newrelic-vault"
   vault_type     = "DEFAULT"
@@ -17,21 +18,23 @@ resource "oci_kms_vault" "newrelic_vault" {
 }
 
 resource "oci_kms_key" "newrelic_key" {
+  count = local.newRelic_Core_Integration_Policy ? 1 : 0
   compartment_id = var.compartment_ocid
   display_name   = "newrelic-key"
   key_shape {
     algorithm = "AES"
     length    = 32
   }
-  management_endpoint = oci_kms_vault.newrelic_vault.management_endpoint
+  management_endpoint = oci_kms_vault.newrelic_vault[count.index].management_endpoint
   freeform_tags       = local.freeform_tags
 }
 
-resource "oci_vault_secret" "api_key" {
+resource "oci_vault_secret" "ingest_api_key" {
+  count = local.newRelic_Core_Integration_Policy ? 1 : 0
   compartment_id = var.compartment_ocid
-  vault_id       = oci_kms_vault.newrelic_vault.id
-  key_id         = oci_kms_key.newrelic_key.id
-  secret_name    = "NewRelicAPIKey"
+  vault_id       = oci_kms_vault.newrelic_vault[count.index].id
+  key_id         = oci_kms_key.newrelic_key[count.index].id
+  secret_name    = "NewRelicIngestAPIKey"
   secret_content {
     content_type = "BASE64"
     content      = base64encode(var.newrelic_ingest_api_key)
@@ -39,31 +42,69 @@ resource "oci_vault_secret" "api_key" {
   freeform_tags = local.freeform_tags
 }
 
+resource "oci_vault_secret" "user_api_key" {
+  count = local.newRelic_Core_Integration_Policy ? 1 : 0
+  compartment_id = var.compartment_ocid
+  vault_id       = oci_kms_vault.newrelic_vault[count.index].id
+  key_id         = oci_kms_key.newrelic_key[count.index].id
+  secret_name    = "NewRelicUserAPIKey"
+  secret_content {
+    content_type = "BASE64"
+    content      = base64encode(var.newrelic_user_api_key)
+  }
+  freeform_tags = local.freeform_tags
+}
+
 #Resource for the dynamic group
 resource "oci_identity_dynamic_group" "nr_service_connector_group" {
-  count          = local.is_home_region && var.create_metrics_stack ? 1 : 0
+  count          = local.is_home_region && local.newRelic_Core_Integration_Policy ? 1 : 0
   compartment_id = var.tenancy_ocid
   description    = "[DO NOT REMOVE] Dynamic group for service connector"
   matching_rule  = "ANY {resource.type = 'serviceconnector', resource.type = 'fnfunc'}"
-  name           = var.dynamic_group_name
+  name           = local.dynamic_group_name
   defined_tags   = {}
   freeform_tags  = local.freeform_tags
 }
 
-#Resource for the policy
+#Resource for the metrics policy
 resource "oci_identity_policy" "nr_metrics_policy" {
-  count          = local.is_home_region && var.create_metrics_stack ? 1 : 0
+  count          = local.is_home_region && local.newRelic_Metrics_Access_Policy ? 1 : 0
+  depends_on     = [oci_identity_dynamic_group.nr_service_connector_group]
+  compartment_id = var.tenancy_ocid
+  description    = "[DO NOT REMOVE] Policy to have read metrics for newrelic integration"
+  name           = local.newrelic_metrics_policy
+  statements     = [
+    "Allow dynamic-group ${local.dynamic_group_name} to read metrics in tenancy"
+  ]
+  defined_tags  = {}
+  freeform_tags = local.freeform_tags
+}
+
+#Resource for the logging policy
+resource "oci_identity_policy" "nr_logs_policy" {
+  count          = local.newRelic_Logs_Access_Policy ? 1 : 0
+  depends_on     = [oci_identity_dynamic_group.nr_service_connector_group]
+  compartment_id = var.tenancy_ocid
+  description    = "[DO NOT REMOVE] Policy to have read logs for newrelic integration"
+  name           = local.newrelic_logs_policy
+  statements     = [
+    "Allow dynamic-group ${local.dynamic_group_name} to read log-content in tenancy"
+  ]
+  defined_tags  = {}
+  freeform_tags = local.freeform_tags
+}
+
+#Resource for the metrics/Logging (Common) policies
+resource "oci_identity_policy" "nr_common_policy" {
+  count          = local.is_home_region && local.newRelic_Core_Integration_Policy ? 1 : 0
   depends_on     = [oci_identity_dynamic_group.nr_service_connector_group]
   compartment_id = var.tenancy_ocid
   description    = "[DO NOT REMOVE] Policy to have any connector hub read from monitoring source and write to a target function"
-  name           = var.newrelic_metrics_policy
+  name           = local.newrelic_common_policy
   statements     = [
-    "Allow dynamic-group ${var.dynamic_group_name} to read metrics in tenancy",
-    "Allow dynamic-group ${var.dynamic_group_name} to use fn-function in tenancy",
-    "Allow dynamic-group ${var.dynamic_group_name} to use fn-invocation in tenancy",
-    "Allow dynamic-group ${var.dynamic_group_name} to manage stream-family in tenancy",
-    "Allow dynamic-group ${var.dynamic_group_name} to manage repos in tenancy",
-    "Allow dynamic-group ${var.dynamic_group_name} to read secret-bundles in tenancy",
+    "Allow dynamic-group ${local.dynamic_group_name} to use fn-function in tenancy",
+    "Allow dynamic-group ${local.dynamic_group_name} to use fn-invocation in tenancy",
+    "Allow dynamic-group ${local.dynamic_group_name} to read secret-bundles in tenancy",
   ]
   defined_tags  = {}
   freeform_tags = local.freeform_tags
@@ -71,7 +112,8 @@ resource "oci_identity_policy" "nr_metrics_policy" {
 
 # Resource to link the New Relic account and configure the integration
 resource "null_resource" "newrelic_link_account" {
-  depends_on = [oci_vault_secret.api_key, oci_identity_policy.nr_metrics_policy, oci_identity_dynamic_group.nr_service_connector_group]
+  count = local.newRelic_Core_Integration_Policy ? 1 : 0
+  depends_on = [oci_vault_secret.user_api_key,oci_vault_secret.ingest_api_key, oci_identity_policy.nr_metrics_policy, oci_identity_dynamic_group.nr_service_connector_group]
   provisioner "local-exec" {
     command = <<EOT
       # Main execution for cloudLinkAccount

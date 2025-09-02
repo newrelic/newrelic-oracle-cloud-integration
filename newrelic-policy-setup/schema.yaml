@@ -11,11 +11,13 @@ groupings:
       - ${newrelic_ingest_api_key}
       - ${newrelic_user_api_key}
       - ${newrelic_account_id}
-  - title: "New Relic Metrics Resource Configuration"
+      - ${policy_stack}
+  - title: "OCI WIF Configuration"
     variables:
-      - ${create_metrics_stack}
-      - ${dynamic_group_name}
-      - ${newrelic_metrics_policy}
+      - ${client_id}
+      - ${client_secret}
+      - ${oci_domain_url}
+      - ${svc_user_name}
 
 variables:
   tenancy_ocid:
@@ -46,26 +48,10 @@ variables:
     required: true
     visible: false
 
-  dynamic_group_name:
-    type: string
-    title: New Relic Dynamic Group Name
-    description: The name of the dynamic group for giving access to the service connector & Functions
-    required: true
-    default: newrelic-metrics-dynamic-group
-    visible: ${create_metrics_stack}
-
-  newrelic_metrics_policy:
-    type: string
-    title: New Relic Metrics Policy
-    description: The name of the policy for metrics for Function Invocations & Secrets
-    required: true
-    default: newrelic-metrics-policy
-    visible: ${create_metrics_stack}
-
   newrelic_ingest_api_key:
     type: string
-    title: New Relic Ingest API Key
-    description: The Ingest API key for sending metrics to New Relic endpoints
+    title: New Relic Ingest - Licence API Key
+    description: The Ingest Licence API key for sending metrics to New Relic endpoints
     required: true
     sensitive: true
     password: true
@@ -88,9 +74,41 @@ variables:
     sensitive: true
     confirmation: true
 
-  create_metrics_stack:
-    type: boolean
-    title: Create Metrics Stack
-    description: Whether to create the New Relic metrics stacks(Policies/Dynamic Groups) or not
+  policy_stack:
+    type: string
+    title: New Relic Policy Instrumentation
+    description: A string indicating which parts of the stack to deploy. Use comma-separated values from METRICS, LOGS, COMMON.
+    visible: true
     required: true
-    default: true
+
+  client_id:
+    type: string
+    title: Client ID
+    description: The Client ID for OCI tenancy, needed for metadata polling from New Relic.
+    required: true
+    visible: true
+
+  client_secret:
+    type: string
+    title: Client Secret
+    description: The Client Secret for the OCI tenancy, needed for metadata polling from New Relic.
+    required: true
+    sensitive: true
+    password: true
+    confirmation: true
+
+  oci_domain_url:
+    type: string
+    title: OCI Domain URL
+    description: The OCI Domain URL, usually https://identity.<region>.oraclecloud.com
+    required: true
+    visible: true
+
+  svc_user_name:
+    type: string
+    title: Service User Name
+    description: The name of the service user created in OCI for New Relic to access the tenancy.
+    required: true
+    visible: true
+
+
