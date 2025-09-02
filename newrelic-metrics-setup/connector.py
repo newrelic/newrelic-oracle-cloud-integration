@@ -40,11 +40,19 @@ def get_payload():
         response.raise_for_status()
         payload = response.json()
     except (requests.RequestException, ValueError) as e:
-        print(f"Error fetching or parsing payload: {e}")
+        print(json.dumps({"error": f"Error fetching or parsing payload: {e}"}))
         return
 
+    ingest_key_ocid = payload.get("ingest_key_ocid", "")
+    user_key_ocid = payload.get("user_key_ocid", "")
     terraform_map_result = create_terraform_map(payload)
-    print(json.dumps(terraform_map_result))
+    # Convert terraform_map to a JSON string so all output values are strings.
+    result = {
+        "ingest_key_ocid": ingest_key_ocid,
+        "user_key_ocid": user_key_ocid,
+        "terraform_map": json.dumps(terraform_map_result)
+    }
+    print(json.dumps(result))
 
 if __name__ == "__main__":
     get_payload()

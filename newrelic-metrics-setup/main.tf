@@ -13,7 +13,7 @@ terraform {
 }
 
 provider "oci" {
-  alias        = "home"
+  alias        = "current_region"
   tenancy_ocid = var.tenancy_ocid
   region       = var.region
 }
@@ -25,7 +25,7 @@ resource "oci_functions_application" "metrics_function_app" {
     "LOGGING_ENABLED"              = "False"
     "NR_METRIC_ENDPOINT"           = var.newrelic_endpoint
     "TENANCY_OCID"                 = var.compartment_ocid
-    "SECRET_OCID"                  = var.home_secret_ocid
+    "SECRET_OCID"                  = local.ingest_api_secret_ocid
     "VAULT_REGION"                 = local.home_region
   }
   defined_tags               = {}

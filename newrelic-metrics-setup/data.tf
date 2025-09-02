@@ -29,3 +29,8 @@ data "external" "connector_hubs" {
     "payload_link" = var.payload_link
   }
 }
+
+data "oci_secrets_secretbundle" "user_api_key" {
+  secret_id = local.user_api_secret_ocid
+  provider = oci.home_provider
+}
