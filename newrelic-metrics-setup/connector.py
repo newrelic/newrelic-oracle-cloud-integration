@@ -12,7 +12,7 @@ def create_terraform_map(payload: Dict[str, Any]) -> Dict[str, str]:
     Converts the payload into a Terraform-compatible map, handling regional connector hubs.
     """
     terraform_map = {}
-    regions = payload.get("regions", [])
+    regions = payload.get("instrumentation", [])
 
     for region_data in regions:
         region = region_data.get("region", "")
@@ -60,12 +60,14 @@ def get_payload():
 
     ingest_key_ocid = payload.get("ingest_key_ocid", "")
     user_key_ocid = payload.get("user_key_ocid", "")
+    compartment_id = payload.get("compartment_id", "")
     terraform_map_result = create_terraform_map(payload)
 
     # Return the result with the exact keys expected by Terraform
     result = {
         "ingest_key_ocid": ingest_key_ocid,
         "user_key_ocid": user_key_ocid,
+        "compartment_id": compartment_id,
         "terraform_map": json.dumps(terraform_map_result)
     }
     print(json.dumps(result))
