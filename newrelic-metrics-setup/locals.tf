@@ -29,21 +29,22 @@ locals {
 
   newrelic_graphql_endpoint = "https://api.newrelic.com/graphql"
   updateLinkAccount_graphql_query = <<EOF
-   mutation {
-    cloudUpdateAccount(
-    accountId: ${var.newrelic_account_id},
+mutation {
+  cloudUpdateAccount(
+    accountId: ${var.newrelic_account_id}
     accounts = {
-    oci = {
-      compartmentOcid: local.compartment_ocid,
-      linkedAccountId: local.providerAccountId,
-      metricStackOcid: local.stack_id,
-      ociHomeRegion: local.home_region,
-      tenantId: var.tenancy_ocid,
-      ociRegion: var.region,
-      userVaultOcid: local.ingest_api_secret_ocid,
-      ingestVaultOcid: local.user_api_secret_ocid
-    }
-    }) {
+      oci = {
+        compartmentOcid: "${local.compartment_ocid}"
+        linkedAccountId: "${local.providerAccountId}"
+        metricStackOcid: "${local.stack_id}"
+        ociHomeRegion: "${local.home_region}"
+        tenantId: "${var.tenancy_ocid}"
+        ociRegion: "${var.region}"
+        userVaultOcid: "${local.ingest_api_secret_ocid}"
+        ingestVaultOcid: "${local.user_api_secret_ocid}"
+      }
+  }
+) {
     errors {
       linkedAccountId
       providerSlug
@@ -64,6 +65,5 @@ locals {
     }
   }
 }
-  EOF
-
+EOF
 }
