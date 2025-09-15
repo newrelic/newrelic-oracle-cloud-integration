@@ -23,9 +23,11 @@ locals {
     accounts = {
     oci = {
       name: "nr_oci",
+      compartmentOcid: local.newRelic_Core_Integration_Policy ? oci_identity_compartment.newrelic_compartment[0].id : "",
+      ociHomeRegion: local.home_region,
       tenantId: var.tenancy_ocid,
-      ingestSecretOcid: local.newRelic_Core_Integration_Policy ? oci_vault_secret.ingest_api_key[0].id : "",
-      userSecretOcid: local.newRelic_Core_Integration_Policy ? oci_vault_secret.user_api_key[0].id : "",
+      ingestVaultOcid: local.newRelic_Core_Integration_Policy ? oci_vault_secret.ingest_api_key[0].id : "",
+      userVaultOcid: local.newRelic_Core_Integration_Policy ? oci_vault_secret.user_api_key[0].id : "",
       ociClientId: var.client_id,
       ociClientSecret: var.client_secret,
       ociDomainUrl: var.oci_domain_url,
