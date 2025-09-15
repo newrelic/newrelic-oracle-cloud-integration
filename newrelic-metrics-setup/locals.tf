@@ -12,11 +12,16 @@ locals {
   vcn_name        = "${var.nr_prefix}-metrics-vcn"
   nat_gateway     = "${local.vcn_name}-natgateway"
   service_gateway = "${local.vcn_name}-servicegateway"
-  subnet          = "${local.vcn_name}-public-subnet"
+  subnet          = "${local.vcn_name}-private-subnet"
 
-  # Iterate over the result map from the external data source.
+  connector_hubs_map = jsondecode(data.external.connector_hubs.result.terraform_map)
+
   connector_hubs_data = [
-    for key, value_str in data.external.connector_hubs.result : jsondecode(value_str)
+    for key, value_str in local.connector_hubs_map : jsondecode(value_str)
   ]
+
+  ingest_api_secret_ocid = data.external.connector_hubs.result.ingest_key_ocid
+  user_api_secret_ocid   = data.external.connector_hubs.result.user_key_ocid
+  compartment_ocid      = data.external.connector_hubs.result.compartment_id
 
 }

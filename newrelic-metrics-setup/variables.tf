@@ -28,11 +28,6 @@ variable "newrelic_endpoint" {
   }
 }
 
-variable "home_secret_ocid" {
-    type        = string
-    description = "The OCID of the secret in the home region where the New Relic Ingest API key is stored."
-}
-
 variable "create_vcn" {
   type        = bool
   default     = true

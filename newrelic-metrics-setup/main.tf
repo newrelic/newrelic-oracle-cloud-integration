@@ -13,19 +13,19 @@ terraform {
 }
 
 provider "oci" {
-  alias        = "home"
+  alias        = "current_region"
   tenancy_ocid = var.tenancy_ocid
   region       = var.region
 }
 
 resource "oci_functions_application" "metrics_function_app" {
-  compartment_id = var.compartment_ocid
+  compartment_id = local.compartment_ocid
   config = {
     "FORWARD_TO_NR"                = "True"
     "LOGGING_ENABLED"              = "False"
     "NR_METRIC_ENDPOINT"           = var.newrelic_endpoint
-    "TENANCY_OCID"                 = var.compartment_ocid
-    "SECRET_OCID"                  = var.home_secret_ocid
+    "TENANCY_OCID"                 = var.tenancy_ocid
+    "SECRET_OCID"                  = local.ingest_api_secret_ocid
     "VAULT_REGION"                 = local.home_region
   }
   defined_tags               = {}
@@ -55,7 +55,7 @@ resource "oci_functions_function" "metrics_function" {
 resource "oci_sch_service_connector" "service_connector" {
   for_each = { for hub in local.connector_hubs_data : hub["name"] => hub }
   depends_on = [oci_functions_function.metrics_function]
-  compartment_id = var.tenancy_ocid
+  compartment_id = local.compartment_ocid
   display_name   = each.value["name"]
   description    = each.value["description"]
   freeform_tags  = local.freeform_tags
@@ -97,17 +97,17 @@ module "vcn" {
   source                   = "oracle-terraform-modules/vcn/oci"
   version                  = "3.6.0"
   count                    = var.create_vcn ? 1 : 0
-  compartment_id           = var.compartment_ocid
+  compartment_id           = local.compartment_ocid
   defined_tags             = {}
   freeform_tags            = local.freeform_tags
   vcn_cidrs                = ["10.0.0.0/16"]
-  vcn_dns_label            = "nrstreaming"
+  vcn_dns_label            = "nrfunction"
   vcn_name                 = local.vcn_name
   lockdown_default_seclist = false
   subnets = {
-    public = {
+    private = {
       cidr_block = "10.0.0.0/16"
-      type       = "public"
+      type       = "private"
       name       = local.subnet
     }
   }
@@ -122,7 +122,7 @@ module "vcn" {
 data "oci_core_route_tables" "default_vcn_route_table" {
   depends_on     = [module.vcn] # Ensure VCN is created before attempting to find its route tables
   count = var.create_vcn ? 1 : 0
-  compartment_id = var.compartment_ocid
+  compartment_id = local.compartment_ocid
   vcn_id         = module.vcn[0].vcn_id # Get the VCN ID from the module output
 
   filter {

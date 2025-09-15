@@ -8,18 +8,32 @@ terraform {
   }
 }
 
+resource "oci_identity_compartment" "newrelic_compartment" {
+  count          = local.newRelic_Core_Integration_Policy ? 1 : 0
+  compartment_id = var.tenancy_ocid
+  name           = "newrelic-compartment"
+  description    = "Compartment for New Relic integration resources"
+  enable_delete  = false
+  freeform_tags  = local.freeform_tags
+}
+
 #Key Vault and Secret for New Relic Ingest and User API Key
 resource "oci_kms_vault" "newrelic_vault" {
   count = local.newRelic_Core_Integration_Policy ? 1 : 0
-  compartment_id = var.compartment_ocid
+  compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
   display_name   = "newrelic-vault"
   vault_type     = "DEFAULT"
   freeform_tags  = local.freeform_tags
+  timeouts {
+    create = "60m"
+    update = "60m"
+    delete = "60m"
+  }
 }
 
 resource "oci_kms_key" "newrelic_key" {
   count = local.newRelic_Core_Integration_Policy ? 1 : 0
-  compartment_id = var.compartment_ocid
+  compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
   display_name   = "newrelic-key"
   key_shape {
     algorithm = "AES"
@@ -27,11 +41,16 @@ resource "oci_kms_key" "newrelic_key" {
   }
   management_endpoint = oci_kms_vault.newrelic_vault[count.index].management_endpoint
   freeform_tags       = local.freeform_tags
+  timeouts {
+    create = "30m"
+    update = "30m"
+    delete = "30m"
+  }
 }
 
 resource "oci_vault_secret" "ingest_api_key" {
   count = local.newRelic_Core_Integration_Policy ? 1 : 0
-  compartment_id = var.compartment_ocid
+  compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
   vault_id       = oci_kms_vault.newrelic_vault[count.index].id
   key_id         = oci_kms_key.newrelic_key[count.index].id
   secret_name    = "NewRelicIngestAPIKey"
@@ -40,11 +59,16 @@ resource "oci_vault_secret" "ingest_api_key" {
     content      = base64encode(var.newrelic_ingest_api_key)
   }
   freeform_tags = local.freeform_tags
+  timeouts {
+    create = "30m"
+    update = "30m"
+    delete = "30m"
+  }
 }
 
 resource "oci_vault_secret" "user_api_key" {
   count = local.newRelic_Core_Integration_Policy ? 1 : 0
-  compartment_id = var.compartment_ocid
+  compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
   vault_id       = oci_kms_vault.newrelic_vault[count.index].id
   key_id         = oci_kms_key.newrelic_key[count.index].id
   secret_name    = "NewRelicUserAPIKey"
@@ -53,6 +77,11 @@ resource "oci_vault_secret" "user_api_key" {
     content      = base64encode(var.newrelic_user_api_key)
   }
   freeform_tags = local.freeform_tags
+  timeouts {
+    create = "30m"
+    update = "30m"
+    delete = "30m"
+  }
 }
 
 #Resource for the dynamic group
@@ -82,7 +111,7 @@ resource "oci_identity_policy" "nr_metrics_policy" {
 
 #Resource for the logging policy
 resource "oci_identity_policy" "nr_logs_policy" {
-  count          = local.newRelic_Logs_Access_Policy ? 1 : 0
+  count          = local.is_home_region && local.newRelic_Logs_Access_Policy ? 1 : 0
   depends_on     = [oci_identity_dynamic_group.nr_service_connector_group]
   compartment_id = var.tenancy_ocid
   description    = "[DO NOT REMOVE] Policy to have read logs for newrelic integration"
@@ -113,7 +142,7 @@ resource "oci_identity_policy" "nr_common_policy" {
 # Resource to link the New Relic account and configure the integration
 resource "null_resource" "newrelic_link_account" {
   count = local.newRelic_Core_Integration_Policy ? 1 : 0
-  depends_on = [oci_vault_secret.user_api_key,oci_vault_secret.ingest_api_key, oci_identity_policy.nr_metrics_policy, oci_identity_dynamic_group.nr_service_connector_group]
+  depends_on = [oci_vault_secret.user_api_key,oci_vault_secret.ingest_api_key, oci_identity_compartment.newrelic_compartment, oci_identity_policy.nr_metrics_policy, oci_identity_dynamic_group.nr_service_connector_group]
   provisioner "local-exec" {
     command = <<EOT
       # Main execution for cloudLinkAccount

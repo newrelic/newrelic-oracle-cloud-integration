@@ -9,7 +9,6 @@ variableGroups:
     variables:
       - ${newrelic_endpoint}
       - ${nr_prefix}
-      - ${home_secret_ocid}
       - ${payload_link}
   - title: "Network options"
     variables:
@@ -59,13 +58,6 @@ variables:
       - newrelic-staging-vortex-metric-api
       - newrelic-metric-api
       - newrelic-eu-metric-api
-
-  home_secret_ocid:
-    type: string
-    title: Home Vault Secret OCID
-    description: The OCID of the secret in the home region that contains the New Relic Ingest API key.
-    required: true
-    visible: true
 
   create_vcn:
     title: Create VCN
