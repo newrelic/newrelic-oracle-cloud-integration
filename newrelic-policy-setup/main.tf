@@ -142,7 +142,7 @@ resource "oci_identity_policy" "nr_common_policy" {
 # Resource to link the New Relic account and configure the integration
 resource "null_resource" "newrelic_link_account" {
   count = local.newRelic_Core_Integration_Policy ? 1 : 0
-  depends_on = [oci_vault_secret.user_api_key,oci_vault_secret.ingest_api_key, oci_identity_policy.nr_metrics_policy, oci_identity_dynamic_group.nr_service_connector_group]
+  depends_on = [oci_vault_secret.user_api_key,oci_vault_secret.ingest_api_key, oci_identity_compartment.newrelic_compartment, oci_identity_policy.nr_metrics_policy, oci_identity_dynamic_group.nr_service_connector_group]
   provisioner "local-exec" {
     command = <<EOT
       # Main execution for cloudLinkAccount
