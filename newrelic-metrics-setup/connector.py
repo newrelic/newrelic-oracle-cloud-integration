@@ -54,12 +54,14 @@ def get_payload():
             "error": f"Error fetching or parsing payload: {e}",
             "ingest_key_ocid": "",
             "user_key_ocid": "",
+            "provider_account_id": "",
             "terraform_map": "{}"
         }))
         return None
 
     ingest_key_ocid = payload.get("ingest_key_ocid", "")
     user_key_ocid = payload.get("user_key_ocid", "")
+    provider_account_id = payload.get("provider_account_id", "")
     compartment_id = payload.get("compartment_id", "")
     terraform_map_result = create_terraform_map(payload)
 
@@ -68,6 +70,7 @@ def get_payload():
         "ingest_key_ocid": ingest_key_ocid,
         "user_key_ocid": user_key_ocid,
         "compartment_id": compartment_id,
+        "provider_account_id": provider_account_id,
         "terraform_map": json.dumps(terraform_map_result)
     }
     print(json.dumps(result))

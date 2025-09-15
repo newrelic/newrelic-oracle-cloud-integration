@@ -169,6 +169,40 @@ output "vcn_network_details" {
   }
 }
 
-output "stack_id" {
-  value = data.oci_resourcemanager_stacks.current_stack.stacks[0].id
+# Resource to link the New Relic account and configure the integration
+resource "null_resource" "newrelic_link_account" {
+  depends_on = [oci_functions_function.metrics_function, oci_sch_service_connector.service_connector]
+  provisioner "local-exec" {
+    command = <<EOT
+      # Main execution for cloudLinkAccount
+      response=$(curl --silent --request POST \
+        --url "${local.newrelic_graphql_endpoint}" \
+        --header "API-Key: ${local.user_api_key}" \
+        --header "Content-Type: application/json" \
+        --header "User-Agent: insomnia/11.1.0" \
+        --data '${jsonencode({
+          query = local.updateLinkAccount_graphql_query
+        })}')
+
+      # Log the full response for debugging
+      echo "Full Response: $response"
+
+      # Extract errors from the response
+      root_errors=$(echo "$response" | jq -r '.errors[]?.message // empty')
+      account_errors=$(echo "$response" | jq -r '.data.cloudLinkAccount.errors[]?.message // empty')
+
+      # Combine errors
+      errors="$root_errors"$'\n'"$account_errors"
+
+      # Check if errors exist
+      if [ -n "$errors" ] && [ "$errors" != $'\n' ]; then
+        echo "Operation failed with the following errors:" >&2
+        echo "$errors" | while IFS= read -r error; do
+          echo "- $error" >&2
+        done
+        exit 1
+      fi
+
+    EOT
+  }
 }
