@@ -173,7 +173,6 @@ resource "null_resource" "newrelic_link_account" {
         done
         exit 1
       fi
-
     EOT
   }
 }
