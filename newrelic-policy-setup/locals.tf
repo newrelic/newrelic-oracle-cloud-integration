@@ -22,7 +22,7 @@ mutation {
     accountId: ${var.newrelic_account_id}
     accounts: {
       oci: {
-        name: "nr_oci"
+        name: "${var.link_account_name}"
         compartmentOcid: "${local.newRelic_Core_Integration_Policy ? oci_identity_compartment.newrelic_compartment[0].id : ""}"
         ociHomeRegion: "${local.home_region}"
         tenantId: "${var.tenancy_ocid}"
