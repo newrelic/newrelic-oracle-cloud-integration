@@ -28,6 +28,12 @@ variable "newrelic_endpoint" {
   }
 }
 
+variable "newrelic_account_id" {
+  type        = string
+  sensitive   = true
+  description = "The New Relic account ID for sending metrics to New Relic endpoints"
+}
+
 variable "create_vcn" {
   type        = bool
   default     = true

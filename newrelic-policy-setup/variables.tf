@@ -36,6 +36,11 @@ variable "newrelic_account_id" {
   description = "The New Relic account ID for sending metrics to New Relic endpoints"
 }
 
+variable "link_account_name" {
+    type        = string
+    description = "The name to assign to the linked account in New Relic"
+}
+
 variable "policy_stack" {
   type        = string
   description = "A string indicating which parts of the stack to deploy. Use comma-separated values from METRICS, LOGS, COMMON."

@@ -23,5 +23,47 @@ locals {
   ingest_api_secret_ocid = data.external.connector_hubs.result.ingest_key_ocid
   user_api_secret_ocid   = data.external.connector_hubs.result.user_key_ocid
   compartment_ocid      = data.external.connector_hubs.result.compartment_id
+  providerAccountId     = data.external.connector_hubs.result.provider_account_id
+  user_api_key          = base64decode(data.oci_secrets_secretbundle.user_api_key.secret_bundle_content[0].content)
+  stack_id              = data.oci_resourcemanager_stacks.current_stack.stacks[0].id
 
+  newrelic_graphql_endpoint = "https://api.newrelic.com/graphql"
+  updateLinkAccount_graphql_query = <<EOF
+mutation {
+  cloudUpdateAccount(
+    accountId: ${var.newrelic_account_id}
+    accounts = {
+      oci = {
+        compartmentOcid: "${local.compartment_ocid}"
+        linkedAccountId: "${local.providerAccountId}"
+        metricStackOcid: "${local.stack_id}"
+        ociHomeRegion: "${local.home_region}"
+        tenantId: "${var.tenancy_ocid}"
+        ociRegion: "${var.region}"
+        userVaultOcid: "${local.ingest_api_secret_ocid}"
+        ingestVaultOcid: "${local.user_api_secret_ocid}"
+      }
+  }
+) {
+    errors {
+      linkedAccountId
+      providerSlug
+      message
+      nrAccountId
+      type
+    }
+    linkedAccounts {
+      id
+      authLabel
+      createdAt
+      disabled
+      externalId
+      metricCollectionMode
+      name
+      nrAccountId
+      updatedAt
+    }
+  }
+}
+EOF
 }

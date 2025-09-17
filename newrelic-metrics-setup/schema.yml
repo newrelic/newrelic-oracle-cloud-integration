@@ -8,6 +8,7 @@ variableGroups:
   - title: "New Relic Environment Configuration"
     variables:
       - ${newrelic_endpoint}
+      - ${newrelic_account_id}
       - ${nr_prefix}
       - ${payload_link}
   - title: "Network options"
@@ -58,6 +59,14 @@ variables:
       - newrelic-staging-vortex-metric-api
       - newrelic-metric-api
       - newrelic-eu-metric-api
+
+  newrelic_account_id:
+    type: string
+    title: New Relic Account ID
+    description: The New Relic Account ID for linking the OCI account to the New Relic account
+    required: true
+    sensitive: true
+    confirmation: true
 
   create_vcn:
     title: Create VCN

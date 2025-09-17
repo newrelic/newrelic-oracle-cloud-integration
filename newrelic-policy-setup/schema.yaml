@@ -11,6 +11,7 @@ groupings:
       - ${newrelic_ingest_api_key}
       - ${newrelic_user_api_key}
       - ${newrelic_account_id}
+      - ${link_account_name}
       - ${policy_stack}
   - title: "OCI WIF Configuration"
     visible:
@@ -106,6 +107,23 @@ variables:
     required: true
     sensitive: true
     confirmation: true
+    visible:
+      or:
+        - eq:
+            - ${policy_stack}
+            - "METRICS,COMMON"
+        - eq:
+            - ${policy_stack}
+            - "LOGS,COMMON"
+        - eq:
+            - ${policy_stack}
+            - "METRICS,LOGS,COMMON"
+
+  link_account_name:
+    type: string
+    title: New Relic Link Account Name
+    description: The name to assign to the linked account in New Relic
+    required: true
     visible:
       or:
         - eq:
