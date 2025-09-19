@@ -11,10 +11,10 @@ locals {
   newRelic_Metrics_Access_Policy = contains(split(",", var.policy_stack), "METRICS")
   newRelic_Logs_Access_Policy    = contains(split(",", var.policy_stack), "LOGS")
   newRelic_Core_Integration_Policy = contains(split(",", var.policy_stack), "COMMON")
-  newrelic_logs_policy     = "newrelic_logs_policy_[DO_NOT_REMOVE]"
-  newrelic_metrics_policy = "newrelic_metrics_policy_[DO_NOT_REMOVE]"
-  newrelic_common_policy  = "newrelic_common_policy_[DO_NOT_REMOVE]"
-  dynamic_group_name      = "newrelic_dynamic_group_[DO_NOT_REMOVE]"
+  newrelic_logs_policy     = "newrelic_logs_policy_DO_NOT_REMOVE"
+  newrelic_metrics_policy = "newrelic_metrics_policy_DO_NOT_REMOVE"
+  newrelic_common_policy  = "newrelic_common_policy_DO_NOT_REMOVE"
+  dynamic_group_name      = "newrelic_dynamic_group_DO_NOT_REMOVE"
   newrelic_graphql_endpoint = "https://api.newrelic.com/graphql"
   linkAccount_graphql_query = <<EOF
 mutation {

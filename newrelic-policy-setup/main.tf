@@ -11,7 +11,7 @@ terraform {
 resource "oci_identity_compartment" "newrelic_compartment" {
   count          = local.newRelic_Core_Integration_Policy ? 1 : 0
   compartment_id = var.tenancy_ocid
-  name           = "newrelic_compartment_[DO_NOT_REMOVE]"
+  name           = "newrelic_compartment_DO_NOT_REMOVE"
   description    = "Compartment for New Relic integration resources"
   enable_delete  = false
   freeform_tags  = local.freeform_tags
@@ -21,7 +21,7 @@ resource "oci_identity_compartment" "newrelic_compartment" {
 resource "oci_kms_vault" "newrelic_vault" {
   count = local.newRelic_Core_Integration_Policy ? 1 : 0
   compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
-  display_name   = "newrelic_vault_[DO_NOT_REMOVE]"
+  display_name   = "newrelic_vault_DO_NOT_REMOVE"
   vault_type     = "DEFAULT"
   freeform_tags  = local.freeform_tags
   timeouts {
@@ -34,7 +34,7 @@ resource "oci_kms_vault" "newrelic_vault" {
 resource "oci_kms_key" "newrelic_key" {
   count = local.newRelic_Core_Integration_Policy ? 1 : 0
   compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
-  display_name   = "newrelic_key_[DO_NOT_REMOVE]"
+  display_name   = "newrelic_key_DO_NOT_REMOVE"
   key_shape {
     algorithm = "AES"
     length    = 32
@@ -53,7 +53,7 @@ resource "oci_vault_secret" "ingest_api_key" {
   compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
   vault_id       = oci_kms_vault.newrelic_vault[count.index].id
   key_id         = oci_kms_key.newrelic_key[count.index].id
-  secret_name    = "newrelic_ingest_api_key_[DO_NOT_REMOVE]"
+  secret_name    = "newrelic_ingest_api_key_DO_NOT_REMOVE"
   secret_content {
     content_type = "BASE64"
     content      = base64encode(var.newrelic_ingest_api_key)
@@ -71,7 +71,7 @@ resource "oci_vault_secret" "user_api_key" {
   compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
   vault_id       = oci_kms_vault.newrelic_vault[count.index].id
   key_id         = oci_kms_key.newrelic_key[count.index].id
-  secret_name    = "newrelic_user_api_key_[DO_NOT_REMOVE]"
+  secret_name    = "newrelic_user_api_key_DO_NOT_REMOVE"
   secret_content {
     content_type = "BASE64"
     content      = base64encode(var.newrelic_user_api_key)
