@@ -6,13 +6,13 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  # JOB 1: Build the Docker image for the Python function and push it to GHCR
+  # 1st Job: Build the Docker image for the Python function and push it to GHCR
   build:
     name: 'Build and Push Docker Image'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write 
+      packages: write
 
     outputs:
       image-name: ${{ steps.set-image-name.outputs.image-name }}
@@ -40,7 +40,7 @@ jobs:
         id: set-image-name
         run: echo "image-name=ghcr.io/${{ github.repository }}:${{ github.sha }}" >> $GITHUB_OUTPUT
 
-  # JOB 2: Call the reusable organization workflow
+  # 2nd Job: Call the reusable organization workflow
   scan:
     name: 'Trigger Organization Scan'
     needs: build
@@ -48,6 +48,7 @@ jobs:
       contents: read
       packages: read
       security-events: write
+      actions: read
     uses: newrelic/.github/.github/workflows/org-level-trivy-scan.yml@main
     with:
       image-name: ${{ needs.build.outputs.image-name }}
