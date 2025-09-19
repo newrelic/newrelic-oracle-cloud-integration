@@ -1,33 +1,27 @@
 name: 'Repo Level Trivy Scan'
-
 on:
   pull_request:
   schedule:
     - cron: '0 0 * * *'
-
 jobs:
-  # 1st Job: Build the Docker image for the Python function and push it to GHCR
+  # 1st Job: Build the Docker image and push it to GHCR
   build:
     name: 'Build and Push Docker Image'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write 
-
     outputs:
       image-name: ${{ steps.set-image-name.outputs.image-name }}
-
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
-
       - name: 'Log in to GitHub Container Registry'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: 'Build and push Docker image'
         uses: docker/build-push-action@v6
         with:
@@ -35,11 +29,9 @@ jobs:
           file: ./newrelic-metrics-function/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
-
       - name: 'Set image name output'
         id: set-image-name
         run: echo "image-name=ghcr.io/${{ github.repository }}:${{ github.sha }}" >> $GITHUB_OUTPUT
-
   # 2nd Job: Call the reusable organization workflow
   scan:
     name: 'Trigger Organization Scan'
@@ -48,7 +40,9 @@ jobs:
       contents: read
       packages: read
       security-events: write
-      actions: read # Added permissions
+      actions: read
+      id-token: write    
+      checks: write      
     uses: newrelic/.github/.github/workflows/org-level-trivy-scan.yml@main
     with:
       image-name: ${{ needs.build.outputs.image-name }}
