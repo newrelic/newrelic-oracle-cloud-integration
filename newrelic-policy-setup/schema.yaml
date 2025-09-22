@@ -8,6 +8,7 @@ groupings:
   - title: "New Relic Environment Configuration"
     variables:
       - ${tenancy_ocid}
+      - ${newrelic_endpoint}
       - ${newrelic_ingest_api_key}
       - ${newrelic_user_api_key}
       - ${newrelic_account_id}
@@ -59,6 +60,30 @@ variables:
     description: The OCID of the compartment where the resources will be created.
     required: true
     visible: false
+
+  newrelic_endpoint:
+    type: enum
+    title: New Relic Endpoint
+    description: The endpoint to hit for sending the metrics. Varies by region [Staging|US|EU]
+    required: true
+    allowMultiple: false
+    default: newrelic-staging-metric-api
+    visible:
+      or:
+        - eq:
+            - ${policy_stack}
+            - "METRICS,COMMON"
+        - eq:
+            - ${policy_stack}
+            - "LOGS,COMMON"
+        - eq:
+            - ${policy_stack}
+            - "METRICS,LOGS,COMMON"
+    enum:
+      - newrelic-staging-metric-api
+      - newrelic-staging-vortex-metric-api
+      - newrelic-metric-api
+      - newrelic-eu-metric-api
 
   newrelic_ingest_api_key:
     type: string
