@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write 
+      packages: write
 
     outputs:
       image-name: ${{ steps.set-image-name.outputs.image-name }}

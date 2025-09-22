@@ -29,7 +29,7 @@ resource "oci_functions_application" "metrics_function_app" {
     "VAULT_REGION"                 = local.home_region
   }
   defined_tags               = {}
-  display_name               = "${var.nr_prefix}-metrics-function-app"
+  display_name               = "newrelic-${var.nr_prefix}-${var.region}-metrics-function-app"
   freeform_tags              = local.freeform_tags
   network_security_group_ids = []
   shape                      = "GENERIC_X86"
@@ -41,18 +41,14 @@ resource "oci_functions_application" "metrics_function_app" {
 resource "oci_functions_function" "metrics_function" {
   application_id = oci_functions_application.metrics_function_app.id
   depends_on = [oci_functions_application.metrics_function_app]
-  display_name   = "${oci_functions_application.metrics_function_app.display_name}-metrics-function"
-  memory_in_mbs  = "256"
+  display_name   = "newrelic-${var.nr_prefix}-${var.region}-metrics-function"
+  memory_in_mbs  = "128"
   defined_tags   = {}
   freeform_tags = local.freeform_tags
   image          = "${var.region}.ocir.io/idms1yfytybe/public-newrelic-repo:latest"
-  provisioned_concurrency_config {
-    strategy = "CONSTANT"
-    count = 20
-  }
 }
 
-resource "oci_sch_service_connector" "service_connector" {
+resource "oci_sch_service_connector" "nr_metrics_service_connector" {
   for_each = { for hub in local.connector_hubs_data : hub["name"] => hub }
   depends_on = [oci_functions_function.metrics_function]
   compartment_id = local.compartment_ocid
@@ -101,7 +97,7 @@ module "vcn" {
   defined_tags             = {}
   freeform_tags            = local.freeform_tags
   vcn_cidrs                = ["10.0.0.0/16"]
-  vcn_dns_label            = "nrfunction"
+  vcn_dns_label            = "nrmetrics"
   vcn_name                 = local.vcn_name
   lockdown_default_seclist = false
   subnets = {
@@ -116,7 +112,7 @@ module "vcn" {
   create_service_gateway       = true
   service_gateway_display_name = local.service_gateway
   create_internet_gateway      = true # Enable creation of Internet Gateway
-  internet_gateway_display_name = "NRInternetGateway" # Name the Internet Gateway
+  internet_gateway_display_name = "NRMetricsInternetGateway" # Name the Internet Gateway
 }
 
 data "oci_core_route_tables" "default_vcn_route_table" {
@@ -171,7 +167,7 @@ output "vcn_network_details" {
 
 # Resource to link the New Relic account and configure the integration
 resource "null_resource" "newrelic_link_account" {
-  depends_on = [oci_functions_function.metrics_function, oci_sch_service_connector.service_connector]
+  depends_on = [oci_functions_function.metrics_function, oci_sch_service_connector.nr_metrics_service_connector]
   provisioner "local-exec" {
     command = <<EOT
       # Main execution for cloudLinkAccount

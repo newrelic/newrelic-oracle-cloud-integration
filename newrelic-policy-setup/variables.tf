@@ -18,6 +18,16 @@ variable "region" {
   description = "OCI Region as documented at https://docs.cloud.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm"
 }
 
+variable "newrelic_endpoint" {
+  type        = string
+  default     = "newrelic-staging-metric-api"
+  description = "The endpoint to hit for sending the metrics. Varies by region [US|EU]"
+  validation {
+    condition     = contains(["newrelic-staging-metric-api", "newrelic-metric-api", "newrelic-eu-metric-api"], var.newrelic_endpoint)
+    error_message = "Valid values for var: newrelic_endpoint are (newrelic-staging-metric-api, newrelic-staging-vortex-metric-api, newrelic-metric-api, newrelic-eu-metric-api)."
+  }
+}
+
 variable "newrelic_ingest_api_key" {
   type        = string
   sensitive   = true

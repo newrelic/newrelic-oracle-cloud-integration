@@ -12,7 +12,7 @@ resource "oci_identity_compartment" "newrelic_compartment" {
   count          = local.newRelic_Core_Integration_Policy ? 1 : 0
   compartment_id = var.tenancy_ocid
   name           = "newrelic_compartment_DO_NOT_REMOVE"
-  description    = "Compartment for New Relic integration resources"
+  description    = "[DO NOT REMOVE] Compartment for New Relic integration resources"
   enable_delete  = false
   freeform_tags  = local.freeform_tags
 }

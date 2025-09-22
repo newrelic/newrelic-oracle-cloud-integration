@@ -9,7 +9,7 @@ locals {
   }
 
   # Names for the network infra
-  vcn_name        = "${var.nr_prefix}-metrics-vcn"
+  vcn_name = "newrelic-${var.nr_prefix}-${var.region}-metrics-vcn"
   nat_gateway     = "${local.vcn_name}-natgateway"
   service_gateway = "${local.vcn_name}-servicegateway"
   subnet          = "${local.vcn_name}-private-subnet"
@@ -26,8 +26,12 @@ locals {
   providerAccountId     = data.external.connector_hubs.result.provider_account_id
   user_api_key          = base64decode(data.oci_secrets_secretbundle.user_api_key.secret_bundle_content[0].content)
   stack_id              = data.oci_resourcemanager_stacks.current_stack.stacks[0].id
-
-  newrelic_graphql_endpoint = "https://api.newrelic.com/graphql"
+  newrelic_graphql_endpoint = {
+    newrelic-staging-metric-api        = "https://staging-api.newrelic.com/graphql"
+    newrelic-staging-vortex-metric-api = "https://staging-api.newrelic.com/graphql"
+    newrelic-metric-api    = "https://api.newrelic.com/graphql"
+    newrelic-eu-metric-api = "https://api.eu.newrelic.com/graphql"
+  }[var.newrelic_endpoint]
   updateLinkAccount_graphql_query = <<EOF
 mutation {
   cloudUpdateAccount(

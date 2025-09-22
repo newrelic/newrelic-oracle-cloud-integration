@@ -15,7 +15,12 @@ locals {
   newrelic_metrics_policy = "newrelic_metrics_policy_DO_NOT_REMOVE"
   newrelic_common_policy  = "newrelic_common_policy_DO_NOT_REMOVE"
   dynamic_group_name      = "newrelic_dynamic_group_DO_NOT_REMOVE"
-  newrelic_graphql_endpoint = "https://api.newrelic.com/graphql"
+  newrelic_graphql_endpoint = {
+    newrelic-staging-metric-api        = "https://staging-api.newrelic.com/graphql"
+    newrelic-staging-vortex-metric-api = "https://staging-api.newrelic.com/graphql"
+    newrelic-metric-api    = "https://api.newrelic.com/graphql"
+    newrelic-eu-metric-api = "https://api.eu.newrelic.com/graphql"
+  }[var.newrelic_endpoint]
   linkAccount_graphql_query = <<EOF
 mutation {
   cloudLinkAccount(
@@ -32,6 +37,7 @@ mutation {
         ociClientSecret: "${var.client_secret}"
         ociDomainUrl: "${var.oci_domain_url}"
         ociSvcUserName: "${var.svc_user_name}"
+        instrumentationType: "${var.policy_stack}"
       }
     }
   ) {

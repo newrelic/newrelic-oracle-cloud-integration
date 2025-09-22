@@ -8,6 +8,7 @@ groupings:
   - title: "New Relic Environment Configuration"
     variables:
       - ${tenancy_ocid}
+      - ${newrelic_endpoint}
       - ${newrelic_ingest_api_key}
       - ${newrelic_user_api_key}
       - ${newrelic_account_id}
@@ -60,14 +61,36 @@ variables:
     required: true
     visible: false
 
+  newrelic_endpoint:
+    type: enum
+    title: New Relic Endpoint
+    description: The endpoint to hit for sending the metrics. Varies by region [Staging|US|EU]
+    required: true
+    allowMultiple: false
+    default: newrelic-staging-metric-api
+    visible:
+      or:
+        - eq:
+            - ${policy_stack}
+            - "METRICS,COMMON"
+        - eq:
+            - ${policy_stack}
+            - "LOGS,COMMON"
+        - eq:
+            - ${policy_stack}
+            - "METRICS,LOGS,COMMON"
+    enum:
+      - newrelic-staging-metric-api
+      - newrelic-staging-vortex-metric-api
+      - newrelic-metric-api
+      - newrelic-eu-metric-api
+
   newrelic_ingest_api_key:
-    type: string
-    title: New Relic Ingest - Licence API Key
-    description: The Ingest Licence API key for sending metrics to New Relic endpoints
+    type: password
+    title: New Relic Ingest - License API Key
+    description: The Ingest License API key for sending metrics to New Relic endpoints
     required: true
     sensitive: true
-    password: true
-    confirmation: true
     visible:
       or:
         - eq:
@@ -81,13 +104,11 @@ variables:
             - "METRICS,LOGS,COMMON"
 
   newrelic_user_api_key:
-    type: string
+    type: password
     title: New Relic User API Key
     description: The User API key for Linking the OCI Account to the New Relic account
     required: true
     sensitive: true
-    password: true
-    confirmation: true
     visible:
       or:
         - eq:
