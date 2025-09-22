@@ -29,7 +29,7 @@ resource "oci_functions_application" "metrics_function_app" {
     "VAULT_REGION"                 = local.home_region
   }
   defined_tags               = {}
-  display_name               = "newrelic"+"-${var.nr_prefix}"+"-${var.region}"+"-metrics-function-app"
+  display_name               = "newrelic-${var.nr_prefix}-${var.region}-metrics-function-app"
   freeform_tags              = local.freeform_tags
   network_security_group_ids = []
   shape                      = "GENERIC_X86"
@@ -41,7 +41,7 @@ resource "oci_functions_application" "metrics_function_app" {
 resource "oci_functions_function" "metrics_function" {
   application_id = oci_functions_application.metrics_function_app.id
   depends_on = [oci_functions_application.metrics_function_app]
-  display_name   = "newrelic"+"-${var.nr_prefix}"+"-${var.region}"+"-metrics-function"
+  display_name   = "newrelic-${var.nr_prefix}-${var.region}-metrics-function"
   memory_in_mbs  = "128"
   defined_tags   = {}
   freeform_tags = local.freeform_tags
