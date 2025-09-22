@@ -36,26 +36,17 @@ locals {
 mutation {
   cloudUpdateAccount(
     accountId: ${var.newrelic_account_id}
-    accounts = {
-      oci = {
+    accounts: {
+      oci: {
         compartmentOcid: "${local.compartment_ocid}"
-        linkedAccountId: "${local.providerAccountId}"
+        linkedAccountId: ${local.providerAccountId}
         metricStackOcid: "${local.stack_id}"
-        ociHomeRegion: "${local.home_region}"
-        tenantId: "${var.tenancy_ocid}"
         ociRegion: "${var.region}"
         userVaultOcid: "${local.ingest_api_secret_ocid}"
         ingestVaultOcid: "${local.user_api_secret_ocid}"
       }
   }
 ) {
-    errors {
-      linkedAccountId
-      providerSlug
-      message
-      nrAccountId
-      type
-    }
     linkedAccounts {
       id
       authLabel

@@ -183,10 +183,6 @@ resource "null_resource" "newrelic_link_account" {
       # Log the full response for debugging
       echo "Full Response: $response"
 
-      # Extract errors from the response
-      root_errors=$(echo "$response" | jq -r '.errors[]?.message // empty')
-      account_errors=$(echo "$response" | jq -r '.data.cloudLinkAccount.errors[]?.message // empty')
-
       # Combine errors
       errors="$root_errors"$'\n'"$account_errors"
 
