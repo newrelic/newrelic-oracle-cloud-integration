@@ -45,7 +45,7 @@ variables:
     title: New Relic prefix
     description: The prefix to use for New Relic resources for Function and VCNs.
     required: true
-    default: newrelic
+    default: metrics
 
   newrelic_endpoint:
     type: enum
