@@ -42,8 +42,8 @@ mutation {
         linkedAccountId: ${local.providerAccountId}
         metricStackOcid: "${local.stack_id}"
         ociRegion: "${var.region}"
-        userVaultOcid: "${local.ingest_api_secret_ocid}"
-        ingestVaultOcid: "${local.user_api_secret_ocid}"
+        userVaultOcid: "${local.user_api_secret_ocid}"
+        ingestVaultOcid: "${local.ingest_api_secret_ocid}"
       }
   }
 ) {

@@ -65,7 +65,7 @@ variables:
     title: New Relic Account ID
     description: The New Relic Account ID for linking the OCI account to the New Relic account
     required: true
-    sensitive: true
+    sensitive: false
     confirmation: true
 
   create_vcn:
