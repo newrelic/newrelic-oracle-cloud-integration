@@ -20,17 +20,18 @@ variable "region" {
 
 variable "newrelic_endpoint" {
   type        = string
-  default     = "newrelic-staging-metric-api"
+  default     = "newrelic-metric-api"
   description = "The endpoint to hit for sending the metrics. Varies by region [US|EU]"
   validation {
-    condition     = contains(["newrelic-staging-metric-api", "newrelic-metric-api", "newrelic-eu-metric-api"], var.newrelic_endpoint)
-    error_message = "Valid values for var: newrelic_endpoint are (newrelic-staging-metric-api, newrelic-staging-vortex-metric-api, newrelic-metric-api, newrelic-eu-metric-api)."
+    condition     = contains(["newrelic-metric-api", "newrelic-eu-metric-api"], var.newrelic_endpoint)
+    error_message = "Valid values for var: newrelic_endpoint are (newrelic-metric-api, newrelic-eu-metric-api)."
   }
 }
 
 variable "newrelic_ingest_api_key" {
   type        = string
   sensitive   = true
+  default     = ""
   description = "The Ingest API key for sending metrics to New Relic endpoints"
 }
 
@@ -47,8 +48,15 @@ variable "newrelic_account_id" {
 }
 
 variable "link_account_name" {
-    type        = string
-    description = "The name to assign to the linked account in New Relic"
+  type        = string
+  default     = ""
+  description = "The name to assign to the linked account in New Relic"
+}
+
+variable "linked_account_id" {
+  type        = string
+  default     = ""
+  description = "The provider ID for New Relic integration with OCI"
 }
 
 variable "policy_stack" {
@@ -59,23 +67,27 @@ variable "policy_stack" {
 variable "client_id" {
   type        = string
   sensitive   = true
+  default     = ""
   description = "Client ID for API access"
 }
 
 variable "client_secret" {
   type        = string
   sensitive   = true
+  default     = ""
   description = "Client Secret for API access"
 }
 
 variable "oci_domain_url" {
   type        = string
+  default     = ""
   description = "OCI domain URL"
 }
 
 variable "svc_user_name" {
   type        = string
   sensitive   = true
+  default     = ""
   description = "Service user name for OCI access"
 }
 
