@@ -176,3 +176,37 @@ resource "null_resource" "newrelic_link_account" {
     EOT
   }
 }
+
+# Resource to link the New Relic account and configure the integration
+resource "null_resource" "newrelic_update_link_account" {
+  count = local.newRelic_Core_Integration_Policy ? 0 : 1
+  provisioner "local-exec" {
+    command = <<EOT
+      # Main execution for cloudLinkAccount
+      response=$(curl --silent --request POST \
+        --url "${local.newrelic_graphql_endpoint}" \
+        --header "API-Key: ${var.newrelic_user_api_key}" \
+        --header "Content-Type: application/json" \
+        --header "User-Agent: insomnia/11.1.0" \
+        --data '${jsonencode({
+          query = local.updateLinkAccount_graphql_query
+        })}')
+
+      # Log the full response for debugging
+      echo "Full Response: $response"
+
+      # Combine errors
+      errors="$root_errors"$'\n'"$account_errors"
+
+      # Check if errors exist
+      if [ -n "$errors" ] && [ "$errors" != $'\n' ]; then
+        echo "Operation failed with the following errors:" >&2
+        echo "$errors" | while IFS= read -r error; do
+          echo "- $error" >&2
+        done
+        exit 1
+      fi
+
+    EOT
+  }
+}

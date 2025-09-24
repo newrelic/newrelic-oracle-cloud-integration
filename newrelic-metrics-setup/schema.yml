@@ -53,10 +53,8 @@ variables:
     description: The endpoint to hit for sending the metrics. Varies by region [Staging|US|EU]
     required: true
     allowMultiple: false
-    default: newrelic-staging-metric-api
+    default: newrelic-metric-api
     enum:
-      - newrelic-staging-metric-api
-      - newrelic-staging-vortex-metric-api
       - newrelic-metric-api
       - newrelic-eu-metric-api
 

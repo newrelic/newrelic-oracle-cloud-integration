@@ -27,8 +27,6 @@ locals {
   user_api_key          = base64decode(data.oci_secrets_secretbundle.user_api_key.secret_bundle_content[0].content)
   stack_id              = data.oci_resourcemanager_stacks.current_stack.stacks[0].id
   newrelic_graphql_endpoint = {
-    newrelic-staging-metric-api        = "https://staging-api.newrelic.com/graphql"
-    newrelic-staging-vortex-metric-api = "https://staging-api.newrelic.com/graphql"
     newrelic-metric-api    = "https://api.newrelic.com/graphql"
     newrelic-eu-metric-api = "https://api.eu.newrelic.com/graphql"
   }[var.newrelic_endpoint]

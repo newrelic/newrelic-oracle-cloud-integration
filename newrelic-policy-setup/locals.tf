@@ -15,9 +15,34 @@ locals {
   newrelic_metrics_policy = "newrelic_metrics_policy_DO_NOT_REMOVE"
   newrelic_common_policy  = "newrelic_common_policy_DO_NOT_REMOVE"
   dynamic_group_name      = "newrelic_dynamic_group_DO_NOT_REMOVE"
+  instrumentation_type   = local.newRelic_Metrics_Access_Policy && local.newRelic_Logs_Access_Policy && local.newRelic_Core_Integration_Policy  ? "METRICS,LOGS" : (local.newRelic_Logs_Access_Policy && local.newRelic_Core_Integration_Policy) ||local.newRelic_Logs_Access_Policy ? "LOGS" : (local.newRelic_Metrics_Access_Policy && local.newRelic_Core_Integration_Policy) || local.newRelic_Metrics_Access_Policy ? "METRICS" : ""
+  updateLinkAccount_graphql_query = <<EOF
+mutation {
+  cloudUpdateAccount(
+    accountId: ${var.newrelic_account_id}
+    accounts: {
+      oci: {
+        linkedAccountId: ${var.linked_account_id}
+        ociRegion: "${var.region}"
+        instrumentationType: "${local.instrumentation_type}"
+      }
+  }
+) {
+    linkedAccounts {
+      id
+      authLabel
+      createdAt
+      disabled
+      externalId
+      metricCollectionMode
+      name
+      nrAccountId
+      updatedAt
+    }
+  }
+}
+EOF
   newrelic_graphql_endpoint = {
-    newrelic-staging-metric-api        = "https://staging-api.newrelic.com/graphql"
-    newrelic-staging-vortex-metric-api = "https://staging-api.newrelic.com/graphql"
     newrelic-metric-api    = "https://api.newrelic.com/graphql"
     newrelic-eu-metric-api = "https://api.eu.newrelic.com/graphql"
   }[var.newrelic_endpoint]
@@ -37,7 +62,7 @@ mutation {
         ociClientSecret: "${var.client_secret}"
         ociDomainUrl: "${var.oci_domain_url}"
         ociSvcUserName: "${var.svc_user_name}"
-        instrumentationType: "${var.policy_stack}"
+        instrumentationType: "${local.instrumentation_type}"
       }
     }
   ) {
