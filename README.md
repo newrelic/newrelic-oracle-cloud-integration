@@ -48,6 +48,7 @@ After the policy stack is successfully created,the Metrics stack will be created
 
 
 Once the stack is created, metrics should be available in the New Relic portal. Open the query builder and run the following query to validate:
+
 ```
 FROM Metric SELECT * where metricName like '%oci%'
 ```
