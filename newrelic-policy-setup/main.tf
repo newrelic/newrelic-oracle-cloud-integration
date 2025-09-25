@@ -19,7 +19,7 @@ resource "oci_identity_compartment" "newrelic_compartment" {
 
 #Key Vault and Secret for New Relic Ingest and User API Key
 resource "oci_kms_vault" "newrelic_vault" {
-  count = local.newRelic_Core_Integration_Policy ? 1 : 0
+  count          = local.newRelic_Core_Integration_Policy ? 1 : 0
   compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
   display_name   = "newrelic_vault_ORM_DO_NOT_REMOVE"
   vault_type     = "DEFAULT"
@@ -32,7 +32,7 @@ resource "oci_kms_vault" "newrelic_vault" {
 }
 
 resource "oci_kms_key" "newrelic_key" {
-  count = local.newRelic_Core_Integration_Policy ? 1 : 0
+  count          = local.newRelic_Core_Integration_Policy ? 1 : 0
   compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
   display_name   = "newrelic_key_ORM_DO_NOT_REMOVE"
   key_shape {
@@ -49,7 +49,7 @@ resource "oci_kms_key" "newrelic_key" {
 }
 
 resource "oci_vault_secret" "ingest_api_key" {
-  count = local.newRelic_Core_Integration_Policy ? 1 : 0
+  count          = local.newRelic_Core_Integration_Policy ? 1 : 0
   compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
   vault_id       = oci_kms_vault.newrelic_vault[count.index].id
   key_id         = oci_kms_key.newrelic_key[count.index].id
@@ -67,7 +67,7 @@ resource "oci_vault_secret" "ingest_api_key" {
 }
 
 resource "oci_vault_secret" "user_api_key" {
-  count = local.newRelic_Core_Integration_Policy ? 1 : 0
+  count          = local.newRelic_Core_Integration_Policy ? 1 : 0
   compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
   vault_id       = oci_kms_vault.newrelic_vault[count.index].id
   key_id         = oci_kms_key.newrelic_key[count.index].id
@@ -102,7 +102,7 @@ resource "oci_identity_policy" "nr_metrics_policy" {
   compartment_id = var.tenancy_ocid
   description    = "[DO NOT REMOVE] Policy to have read metrics for newrelic integration"
   name           = local.newrelic_metrics_policy
-  statements     = [
+  statements = [
     "Allow dynamic-group ${local.dynamic_group_name} to read metrics in tenancy"
   ]
   defined_tags  = {}
@@ -116,7 +116,7 @@ resource "oci_identity_policy" "nr_logs_policy" {
   compartment_id = var.tenancy_ocid
   description    = "[DO NOT REMOVE] Policy to have read logs for newrelic integration"
   name           = local.newrelic_logs_policy
-  statements     = [
+  statements = [
     "Allow dynamic-group ${local.dynamic_group_name} to read log-content in tenancy"
   ]
   defined_tags  = {}
@@ -130,7 +130,7 @@ resource "oci_identity_policy" "nr_common_policy" {
   compartment_id = var.tenancy_ocid
   description    = "[DO NOT REMOVE] Policy to have any connector hub read from monitoring source and write to a target function"
   name           = local.newrelic_common_policy
-  statements     = [
+  statements = [
     "Allow dynamic-group ${local.dynamic_group_name} to use fn-function in tenancy",
     "Allow dynamic-group ${local.dynamic_group_name} to use fn-invocation in tenancy",
     "Allow dynamic-group ${local.dynamic_group_name} to read secret-bundles in tenancy",
@@ -141,8 +141,8 @@ resource "oci_identity_policy" "nr_common_policy" {
 
 # Resource to link the New Relic account and configure the integration
 resource "null_resource" "newrelic_link_account" {
-  count = local.newRelic_Core_Integration_Policy ? 1 : 0
-  depends_on = [oci_vault_secret.user_api_key,oci_vault_secret.ingest_api_key, oci_identity_compartment.newrelic_compartment, oci_identity_policy.nr_metrics_policy, oci_identity_dynamic_group.nr_service_connector_group]
+  count      = local.newRelic_Core_Integration_Policy ? 1 : 0
+  depends_on = [oci_vault_secret.user_api_key, oci_vault_secret.ingest_api_key, oci_identity_compartment.newrelic_compartment, oci_identity_policy.nr_metrics_policy, oci_identity_dynamic_group.nr_service_connector_group]
   provisioner "local-exec" {
     command = <<EOT
       # Main execution for cloudLinkAccount
@@ -152,8 +152,8 @@ resource "null_resource" "newrelic_link_account" {
         --header "Content-Type: application/json" \
         --header "User-Agent: insomnia/11.1.0" \
         --data '${jsonencode({
-          query = local.linkAccount_graphql_query
-        })}')
+    query = local.linkAccount_graphql_query
+})}')
 
       # Log the full response for debugging
       echo "Full Response: $response"
@@ -174,7 +174,7 @@ resource "null_resource" "newrelic_link_account" {
         exit 1
       fi
     EOT
-  }
+}
 }
 
 # Resource to link the New Relic account and configure the integration
@@ -189,8 +189,8 @@ resource "null_resource" "newrelic_update_link_account" {
         --header "Content-Type: application/json" \
         --header "User-Agent: insomnia/11.1.0" \
         --data '${jsonencode({
-          query = local.updateLinkAccount_graphql_query
-        })}')
+    query = local.updateLinkAccount_graphql_query
+})}')
 
       # Log the full response for debugging
       echo "Full Response: $response"
@@ -208,5 +208,5 @@ resource "null_resource" "newrelic_update_link_account" {
       fi
 
     EOT
-  }
+}
 }

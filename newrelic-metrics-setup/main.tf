@@ -21,12 +21,12 @@ provider "oci" {
 resource "oci_functions_application" "metrics_function_app" {
   compartment_id = local.compartment_ocid
   config = {
-    "FORWARD_TO_NR"                = "True"
-    "LOGGING_ENABLED"              = "False"
-    "NR_METRIC_ENDPOINT"           = var.newrelic_endpoint
-    "TENANCY_OCID"                 = var.tenancy_ocid
-    "SECRET_OCID"                  = local.ingest_api_secret_ocid
-    "VAULT_REGION"                 = local.home_region
+    "FORWARD_TO_NR"      = "True"
+    "LOGGING_ENABLED"    = "False"
+    "NR_METRIC_ENDPOINT" = var.newrelic_endpoint
+    "TENANCY_OCID"       = var.tenancy_ocid
+    "SECRET_OCID"        = local.ingest_api_secret_ocid
+    "VAULT_REGION"       = local.home_region
   }
   defined_tags               = {}
   display_name               = "newrelic-${var.nr_prefix}-${var.region}-metrics-function-app"
@@ -40,17 +40,17 @@ resource "oci_functions_application" "metrics_function_app" {
 
 resource "oci_functions_function" "metrics_function" {
   application_id = oci_functions_application.metrics_function_app.id
-  depends_on = [oci_functions_application.metrics_function_app]
+  depends_on     = [oci_functions_application.metrics_function_app]
   display_name   = "newrelic-${var.nr_prefix}-${var.region}-metrics-function"
   memory_in_mbs  = "128"
   defined_tags   = {}
-  freeform_tags = local.freeform_tags
+  freeform_tags  = local.freeform_tags
   image          = "${var.region}.ocir.io/idms1yfytybe/public-newrelic-repo:latest"
 }
 
 resource "oci_sch_service_connector" "nr_metrics_service_connector" {
-  for_each = { for hub in local.connector_hubs_data : hub["name"] => hub }
-  depends_on = [oci_functions_function.metrics_function]
+  for_each       = { for hub in local.connector_hubs_data : hub["name"] => hub }
+  depends_on     = [oci_functions_function.metrics_function]
   compartment_id = local.compartment_ocid
   display_name   = each.value["name"]
   description    = each.value["description"]
@@ -81,10 +81,10 @@ resource "oci_sch_service_connector" "nr_metrics_service_connector" {
   }
 
   target {
-    kind = "functions"
-    function_id           = oci_functions_function.metrics_function.id
-    batch_size_in_kbs     = each.value["batch_size_in_kbs"]
-    batch_time_in_sec     = each.value["batch_time_in_sec"]
+    kind              = "functions"
+    function_id       = oci_functions_function.metrics_function.id
+    batch_size_in_kbs = each.value["batch_size_in_kbs"]
+    batch_time_in_sec = each.value["batch_time_in_sec"]
   }
 }
 
@@ -107,17 +107,17 @@ module "vcn" {
       name       = local.subnet
     }
   }
-  create_nat_gateway           = true
-  nat_gateway_display_name     = local.nat_gateway
-  create_service_gateway       = true
-  service_gateway_display_name = local.service_gateway
-  create_internet_gateway      = true # Enable creation of Internet Gateway
+  create_nat_gateway            = true
+  nat_gateway_display_name      = local.nat_gateway
+  create_service_gateway        = true
+  service_gateway_display_name  = local.service_gateway
+  create_internet_gateway       = true                       # Enable creation of Internet Gateway
   internet_gateway_display_name = "NRMetricsInternetGateway" # Name the Internet Gateway
 }
 
 data "oci_core_route_tables" "default_vcn_route_table" {
   depends_on     = [module.vcn] # Ensure VCN is created before attempting to find its route tables
-  count = var.create_vcn ? 1 : 0
+  count          = var.create_vcn ? 1 : 0
   compartment_id = local.compartment_ocid
   vcn_id         = module.vcn[0].vcn_id # Get the VCN ID from the module output
 
@@ -131,7 +131,7 @@ data "oci_core_route_tables" "default_vcn_route_table" {
 # Resource to manage the VCN's default route table and add your rule.
 resource "oci_core_default_route_table" "default_internet_route" {
   manage_default_resource_id = data.oci_core_route_tables.default_vcn_route_table[0].route_tables[0].id
-  count = var.create_vcn ? 1 : 0
+  count                      = var.create_vcn ? 1 : 0
   depends_on = [
     module.vcn,
     data.oci_core_route_tables.default_vcn_route_table # Ensure the data source has run
@@ -155,7 +155,7 @@ output "vcn_network_details" {
     service_gateway_id = module.vcn[0].service_gateway_id
     sgw_route_id       = module.vcn[0].sgw_route_id
     subnet_id          = module.vcn[0].subnet_id[local.subnet]
-  } : {
+    } : {
     vcn_id             = ""
     nat_gateway_id     = ""
     nat_route_id       = ""
@@ -177,8 +177,8 @@ resource "null_resource" "newrelic_link_account" {
         --header "Content-Type: application/json" \
         --header "User-Agent: insomnia/11.1.0" \
         --data '${jsonencode({
-          query = local.updateLinkAccount_graphql_query
-        })}')
+    query = local.updateLinkAccount_graphql_query
+})}')
 
       # Log the full response for debugging
       echo "Full Response: $response"
@@ -196,5 +196,5 @@ resource "null_resource" "newrelic_link_account" {
       fi
 
     EOT
-  }
+}
 }

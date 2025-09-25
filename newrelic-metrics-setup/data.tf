@@ -32,5 +32,5 @@ data "external" "connector_hubs" {
 
 data "oci_secrets_secretbundle" "user_api_key" {
   secret_id = local.user_api_secret_ocid
-  provider = oci.home_provider
+  provider  = oci.home_provider
 }

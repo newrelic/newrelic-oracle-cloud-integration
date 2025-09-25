@@ -9,7 +9,7 @@ locals {
   }
 
   # Names for the network infra
-  vcn_name = "newrelic-${var.nr_prefix}-${var.region}-metrics-vcn"
+  vcn_name        = "newrelic-${var.nr_prefix}-${var.region}-metrics-vcn"
   nat_gateway     = "${local.vcn_name}-natgateway"
   service_gateway = "${local.vcn_name}-servicegateway"
   subnet          = "${local.vcn_name}-private-subnet"
@@ -22,10 +22,10 @@ locals {
 
   ingest_api_secret_ocid = data.external.connector_hubs.result.ingest_key_ocid
   user_api_secret_ocid   = data.external.connector_hubs.result.user_key_ocid
-  compartment_ocid      = data.external.connector_hubs.result.compartment_id
-  providerAccountId     = data.external.connector_hubs.result.provider_account_id
-  user_api_key          = base64decode(data.oci_secrets_secretbundle.user_api_key.secret_bundle_content[0].content)
-  stack_id              = data.oci_resourcemanager_stacks.current_stack.stacks[0].id
+  compartment_ocid       = data.external.connector_hubs.result.compartment_id
+  providerAccountId      = data.external.connector_hubs.result.provider_account_id
+  user_api_key           = base64decode(data.oci_secrets_secretbundle.user_api_key.secret_bundle_content[0].content)
+  stack_id               = data.oci_resourcemanager_stacks.current_stack.stacks[0].id
   newrelic_graphql_endpoint = {
     newrelic-metric-api    = "https://api.newrelic.com/graphql"
     newrelic-eu-metric-api = "https://api.eu.newrelic.com/graphql"
