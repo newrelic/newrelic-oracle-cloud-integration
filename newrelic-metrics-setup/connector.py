@@ -30,7 +30,7 @@ def create_terraform_map(payload: Dict[str, Any]) -> Dict[str, str]:
                 # Skip this hub if compartments is empty
                 continue
 
-            name = f"newrelic-{region}-metrics-connector-hub-{hub_counter}"
+            name = f"newrelic-metrics-{region}-connector-hub-{hub_counter}"
             terraform_map[name] = json.dumps({
                 "name": name,
                 "description": "[DO NOT DELETE] New Relic Metrics Connector Hub to distribute metrics to New Relic",

@@ -11,10 +11,10 @@ locals {
   newRelic_Metrics_Access_Policy = contains(split(",", var.policy_stack), "METRICS")
   newRelic_Logs_Access_Policy    = contains(split(",", var.policy_stack), "LOGS")
   newRelic_Core_Integration_Policy = contains(split(",", var.policy_stack), "COMMON")
-  newrelic_logs_policy     = "newrelic_logs_policy_DO_NOT_REMOVE"
-  newrelic_metrics_policy = "newrelic_metrics_policy_DO_NOT_REMOVE"
-  newrelic_common_policy  = "newrelic_common_policy_DO_NOT_REMOVE"
-  dynamic_group_name      = "newrelic_dynamic_group_DO_NOT_REMOVE"
+  newrelic_logs_policy     = "newrelic_logs_policy_ORM_DO_NOT_REMOVE"
+  newrelic_metrics_policy = "newrelic_metrics_policy_ORM_DO_NOT_REMOVE"
+  newrelic_common_policy  = "newrelic_common_policy_DO_ORM_NOT_REMOVE"
+  dynamic_group_name      = "newrelic_dynamic_group_DO_NOT_ORM_REMOVE"
   instrumentation_type   = local.newRelic_Metrics_Access_Policy && local.newRelic_Logs_Access_Policy && local.newRelic_Core_Integration_Policy  ? "METRICS,LOGS" : (local.newRelic_Logs_Access_Policy && local.newRelic_Core_Integration_Policy) ||local.newRelic_Logs_Access_Policy ? "LOGS" : (local.newRelic_Metrics_Access_Policy && local.newRelic_Core_Integration_Policy) || local.newRelic_Metrics_Access_Policy ? "METRICS" : ""
   updateLinkAccount_graphql_query = <<EOF
 mutation {
