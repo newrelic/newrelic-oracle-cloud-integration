@@ -55,7 +55,7 @@ variable "link_account_name" {
 
 variable "linked_account_id" {
   type        = string
-  default     = ""
+  default     = null
   description = "The provider ID for New Relic integration with OCI"
 }
 
