@@ -123,8 +123,8 @@ variables:
 
   link_account_name:
     type: string
-    title: New Relic Link Account Name
-    description: The name to assign to the linked account in New Relic
+    title: New Relic Provider Account Name
+    description: The name assigned to the linked account created under New Relic account
     required: true
     visible:
       or:

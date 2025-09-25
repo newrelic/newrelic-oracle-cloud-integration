@@ -32,8 +32,6 @@ An ORM policy stack must be created in the home region of the tenancy. The polic
 Allow dynamic-group <GROUP_NAME> to read metrics in tenancy
 Allow dynamic-group <GROUP_NAME> to use fn-function in tenancy
 Allow dynamic-group <GROUP_NAME> to use fn-invocation in tenancy
-Allow dynamic-group <GROUP_NAME> to manage stream-family in tenancy
-Allow dynamic-group <GROUP_NAME> to manage repos in tenancy
 Allow dynamic-group <GROUP_NAME> to read secret-bundles in tenancy
 ```
 
@@ -58,8 +56,8 @@ The following table lists available environment variables that can be set for th
 
 | Input | Type | Required | Description
 | ----- | ---- |----------| -----------
-| NR_METRIC_ENDPOINT | string | TRUE     | The metric api endpoint to forward metrics to (EU or US). Default: `newrelic-metric-api`
-| FORWARD_TO_NR | string | FALSE    | Toggle forwarding to New Relic - Can be one of: `True,False`. Default: `True`
+| NR_METRIC_ENDPOINT | string | TRUE     | The metric api endpoint to forward metrics to (EU or US). Default: `US`
+| FORWARD_TO_NR | string | TRUE     | Toggle forwarding to New Relic - Can be one of: `True,False`. Default: `True`
 | LOGGING_ENABLED | string | FALSE    | The logging level for function logs emitted - Can be one of: `INFO,WARNING,ERROR,DEBUG`. Default: `INFO`
 | TENANCY_OCID | string | TRUE     | The OCID of the tenancy to which the metrics are being forwarded.
 |SECRET_OCID | string | TRUE     | The OCID of the secret containing the New Relic Ingest Key.

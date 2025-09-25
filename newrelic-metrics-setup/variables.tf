@@ -47,6 +47,6 @@ variable "function_subnet_id" {
 }
 
 variable "payload_link" {
-    type        = string
-    description = "The link to the payload for the connector hubs."
+  type        = string
+  description = "The link to the payload for the connector hubs."
 }
