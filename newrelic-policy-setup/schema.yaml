@@ -68,10 +68,10 @@ variables:
     description: The endpoint to hit for sending the metrics. Varies by region [US|EU]
     required: true
     allowMultiple: false
-    default: newrelic-metric-api
+    default: US
     enum:
-      - newrelic-metric-api
-      - newrelic-eu-metric-api
+      - US
+      - EU
 
   newrelic_ingest_api_key:
     type: password

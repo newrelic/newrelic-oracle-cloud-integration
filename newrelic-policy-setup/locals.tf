@@ -6,17 +6,18 @@ locals {
   is_home_region = var.region == local.home_region
 
   freeform_tags = {
-    newrelic-terraform = "true"
+    newrelic-orm-terraform = "true"
   }
   newRelic_Metrics_Access_Policy   = contains(split(",", var.policy_stack), "METRICS")
   newRelic_Logs_Access_Policy      = contains(split(",", var.policy_stack), "LOGS")
   newRelic_Core_Integration_Policy = contains(split(",", var.policy_stack), "COMMON")
-  newrelic_logs_policy             = "newrelic_logs_policy_ORM_DO_NOT_REMOVE"
-  newrelic_metrics_policy          = "newrelic_metrics_policy_ORM_DO_NOT_REMOVE"
-  newrelic_common_policy           = "newrelic_common_policy_ORM_DO_NOT_REMOVE"
-  dynamic_group_name               = "newrelic_dynamic_group_ORM_DO_NOT_REMOVE"
+  newrelic_logs_policy             = "newrelic_logs_policy_ORM_DO_NOT_REMOVE_${local.random_id}"
+  newrelic_metrics_policy          = "newrelic_metrics_policy_ORM_DO_NOT_REMOVE_${local.random_id}"
+  newrelic_common_policy           = "newrelic_common_policy_ORM_DO_NOT_REMOVE_${local.random_id}"
+  dynamic_group_name               = "newrelic_dynamic_group_ORM_DO_NOT_REMOVE_${local.random_id}"
   instrumentation_type             = local.newRelic_Metrics_Access_Policy && local.newRelic_Logs_Access_Policy && local.newRelic_Core_Integration_Policy ? "METRICS,LOGS" : (local.newRelic_Logs_Access_Policy && local.newRelic_Core_Integration_Policy) || local.newRelic_Logs_Access_Policy ? "LOGS" : (local.newRelic_Metrics_Access_Policy && local.newRelic_Core_Integration_Policy) || local.newRelic_Metrics_Access_Policy ? "METRICS" : ""
   linked_account_id                = var.linked_account_id != null ? var.linked_account_id : ""
+  random_id                        = substr(md5(timestamp()), 0, 4)
   updateLinkAccount_graphql_query  = <<EOF
 mutation {
   cloudUpdateAccount(
@@ -44,8 +45,8 @@ mutation {
 }
 EOF
   newrelic_graphql_endpoint = {
-    newrelic-metric-api    = "https://api.newrelic.com/graphql"
-    newrelic-eu-metric-api = "https://api.eu.newrelic.com/graphql"
+    US = "https://api.newrelic.com/graphql"
+    EU = "https://api.eu.newrelic.com/graphql"
   }[var.newrelic_endpoint]
   linkAccount_graphql_query = <<EOF
 mutation {
