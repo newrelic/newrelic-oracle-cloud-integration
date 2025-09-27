@@ -43,7 +43,6 @@ variable "newrelic_user_api_key" {
 
 variable "newrelic_account_id" {
   type        = string
-  sensitive   = true
   description = "The New Relic account ID for sending metrics to New Relic endpoints"
 }
 

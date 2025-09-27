@@ -27,9 +27,9 @@ detailed_logging_enabled = eval(os.environ.get("LOGGING_ENABLED"))
 nr_metric_endpoint_enum = os.getenv('NR_METRIC_ENDPOINT', 'staging')
 
 # Determine the New Relic metric endpoint based on the environment variable
-if nr_metric_endpoint_enum == 'US':
+if nr_metric_endpoint_enum == 'US'or nr_metric_endpoint_enum == 'newrelic-metric-api':
     nr_metric_endpoint = 'https://metric-api.newrelic.com/oci/metric'
-elif nr_metric_endpoint_enum == 'EU':
+elif nr_metric_endpoint_enum == 'EU'or nr_metric_endpoint_enum == 'newrelic-eu-metric-api':
     nr_metric_endpoint = 'https://metric-api.eu.newrelic.com/oci/metric'
 else:
     raise ValueError(f"Unknown NR_METRIC_ENDPOINT: {nr_metric_endpoint_enum}")
