@@ -45,7 +45,7 @@ resource "oci_functions_function" "metrics_function" {
   memory_in_mbs  = "128"
   defined_tags   = {}
   freeform_tags  = local.freeform_tags
-  image          = "${var.region}.ocir.io/idms1yfytybe/public-newrelic-repo:latest"
+  image          = "${var.region}.ocir.io/idptojlonu4e/newrelic-metrics-integration/oci-metrics-forwarder:latest"
 }
 
 resource "oci_sch_service_connector" "nr_metrics_service_connector" {

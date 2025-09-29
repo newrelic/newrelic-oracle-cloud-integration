@@ -11,8 +11,8 @@ MODE=${1:-"full"} # First argument: "build-only" or "full". Defaults to "full".
 REGION=${2} # Second argument: The OCI region.
 
 tenancy_namespace="${OCI_TENANCY_NAMESPACE}"
-repository_name="${REPOSITORY_NAME:-public-newrelic-repo}"
-image_name="${IMAGE_NAME:-newrelic-link-account-function}"
+repository_name="${REPOSITORY_NAME:-newrelic-metrics-integration/oci-metrics-forwarder}"
+image_name="${IMAGE_NAME:-oci-metrics-forwarder}"
 image_tag="${IMAGE_TAG:-latest}"
 username="${OCI_USERNAME}"
 
