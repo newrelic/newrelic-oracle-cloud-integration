@@ -24,7 +24,7 @@ OUTPUT_MESSAGE_VERSION = "v1.0"
 # Determine if detailed logging is enabled based on environment variable
 detailed_logging_enabled = eval(os.environ.get("LOGGING_ENABLED"))
 # New Relic metric endpoint
-nr_metric_endpoint_enum = os.getenv('NR_METRIC_ENDPOINT', 'staging')
+nr_metric_endpoint_enum = os.getenv('NR_METRIC_ENDPOINT', 'US')
 
 # Determine the New Relic metric endpoint based on the environment variable
 if nr_metric_endpoint_enum == 'US'or nr_metric_endpoint_enum == 'newrelic-metric-api':
@@ -32,7 +32,8 @@ if nr_metric_endpoint_enum == 'US'or nr_metric_endpoint_enum == 'newrelic-metric
 elif nr_metric_endpoint_enum == 'EU'or nr_metric_endpoint_enum == 'newrelic-eu-metric-api':
     nr_metric_endpoint = 'https://metric-api.eu.newrelic.com/oci/metric'
 else:
-    raise ValueError(f"Unknown NR_METRIC_ENDPOINT: {nr_metric_endpoint_enum}")
+    nr_metric_endpoint = nr_metric_endpoint_enum
+    logger.warning(f"Unknown NR_METRIC_ENDPOINT: {nr_metric_endpoint_enum}, Please ensure valid value is set")
 
 # Tenancy OCID
 tenancy_ocid = os.environ.get("TENANCY_OCID")
