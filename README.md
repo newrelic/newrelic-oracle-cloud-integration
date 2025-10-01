@@ -2,10 +2,11 @@
 
 # New Relic OCI Integrations
 
-This repository contains integrations to forward metrics and logs from Oracle Cloud Infrastructure (OCI).
+This repository contains integrations to forward metrics from Oracle Cloud Infrastructure (OCI).
 
 ## Prerequisites
 
+* [OCI Auth Integration](https://docs-preview.newrelic.com/docs/oracle-cloud-infrastructure#wif) 
 * [New Relic Ingest Key & API Key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#license-key)
 * OCI user with Cloud Administrator role to create resources/stacks
 
