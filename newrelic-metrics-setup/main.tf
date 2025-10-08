@@ -183,18 +183,34 @@ resource "null_resource" "newrelic_link_account" {
       # Log the full response for debugging
       echo "Full Response: $response"
 
-      # Combine errors
-      errors="$root_errors"$'\n'"$account_errors"
+      # Extract errors from the response
+      root_errors=$(echo "$response" | jq -r '.errors[]?.message // empty')
+      update_account_errors=$(echo "$response" | jq -r '.data.cloudUpdateAccount.errors[]?.message // empty')
 
-      # Check if errors exist
-      if [ -n "$errors" ] && [ "$errors" != $'\n' ]; then
+      # Check if data is null which indicates a possible error
+      data_null=$(echo "$response" | jq -r 'if .data.cloudUpdateAccount == null then "true" else "false" end')
+
+      # Combine errors
+      errors="$root_errors"$'\n'"$update_account_errors"
+      errors=$(echo "$errors" | grep -v '^$')
+
+      # Check if errors exist or data is null
+      if [ -n "$errors" ] || [ "$data_null" == "true" ]; then
         echo "Operation failed with the following errors:" >&2
-        echo "$errors" | while IFS= read -r error; do
-          echo "- $error" >&2
-        done
+        if [ -n "$errors" ]; then
+          echo "$errors" | while IFS= read -r error; do
+            echo "- $error" >&2
+          done
+        fi
+
+        if [ "$data_null" == "true" ] && [ -z "$errors" ]; then
+          echo "- GraphQL operation returned null data. Please verify your parameters and query." >&2
+        fi
+
         exit 1
       fi
 
+      echo "Successfully updated New Relic account link"
     EOT
 }
 }

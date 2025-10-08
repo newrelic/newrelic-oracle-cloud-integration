@@ -19,7 +19,7 @@ resource "oci_identity_compartment" "newrelic_compartment" {
 
 #Key Vault and Secret for New Relic Ingest and User API Key
 resource "oci_kms_vault" "newrelic_vault" {
-  count          = local.newRelic_Core_Integration_Policy ? 1 : 0
+  count          = local.newRelic_Core_Integration_Policy && var.create_vault ? 1 : 0
   compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
   display_name   = "newrelic_vault_ORM_DO_NOT_REMOVE_${local.random_id}"
   vault_type     = "DEFAULT"
@@ -32,7 +32,7 @@ resource "oci_kms_vault" "newrelic_vault" {
 }
 
 resource "oci_kms_key" "newrelic_key" {
-  count          = local.newRelic_Core_Integration_Policy ? 1 : 0
+  count          = local.newRelic_Core_Integration_Policy && var.create_vault ? 1 : 0
   compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
   display_name   = "newrelic_key_ORM_DO_NOT_REMOVE_${local.random_id}"
   key_shape {
@@ -49,7 +49,7 @@ resource "oci_kms_key" "newrelic_key" {
 }
 
 resource "oci_vault_secret" "ingest_api_key" {
-  count          = local.newRelic_Core_Integration_Policy ? 1 : 0
+  count          = local.newRelic_Core_Integration_Policy && var.create_vault ? 1 : 0
   compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
   vault_id       = oci_kms_vault.newrelic_vault[count.index].id
   key_id         = oci_kms_key.newrelic_key[count.index].id
@@ -67,7 +67,7 @@ resource "oci_vault_secret" "ingest_api_key" {
 }
 
 resource "oci_vault_secret" "user_api_key" {
-  count          = local.newRelic_Core_Integration_Policy ? 1 : 0
+  count          = local.newRelic_Core_Integration_Policy && var.create_vault ? 1 : 0
   compartment_id = oci_identity_compartment.newrelic_compartment[count.index].id
   vault_id       = oci_kms_vault.newrelic_vault[count.index].id
   key_id         = oci_kms_key.newrelic_key[count.index].id
@@ -148,7 +148,7 @@ resource "null_resource" "newrelic_link_account" {
       # Main execution for cloudLinkAccount
       response=$(curl --silent --request POST \
         --url "${local.newrelic_graphql_endpoint}" \
-        --header "API-Key: ${var.newrelic_user_api_key}" \
+        --header "API-Key: ${local.user_api_key}" \
         --header "Content-Type: application/json" \
         --header "User-Agent: insomnia/11.1.0" \
         --data '${jsonencode({
@@ -185,7 +185,7 @@ resource "null_resource" "newrelic_update_link_account" {
       # Main execution for cloudLinkAccount
       response=$(curl --silent --request POST \
         --url "${local.newrelic_graphql_endpoint}" \
-        --header "API-Key: ${var.newrelic_user_api_key}" \
+        --header "API-Key: ${local.user_api_key}" \
         --header "Content-Type: application/json" \
         --header "User-Agent: insomnia/11.1.0" \
         --data '${jsonencode({
@@ -195,18 +195,34 @@ resource "null_resource" "newrelic_update_link_account" {
       # Log the full response for debugging
       echo "Full Response: $response"
 
-      # Combine errors
-      errors="$root_errors"$'\n'"$account_errors"
+      # Extract errors from the response
+      root_errors=$(echo "$response" | jq -r '.errors[]?.message // empty')
+      update_account_errors=$(echo "$response" | jq -r '.data.cloudUpdateAccount.errors[]?.message // empty')
 
-      # Check if errors exist
-      if [ -n "$errors" ] && [ "$errors" != $'\n' ]; then
+      # Check if data is null which indicates a possible error
+      data_null=$(echo "$response" | jq -r 'if .data.cloudUpdateAccount == null then "true" else "false" end')
+
+      # Combine errors
+      errors="$root_errors"$'\n'"$update_account_errors"
+      errors=$(echo "$errors" | grep -v '^$')
+
+      # Check if errors exist or data is null
+      if [ -n "$errors" ] || [ "$data_null" == "true" ]; then
         echo "Operation failed with the following errors:" >&2
-        echo "$errors" | while IFS= read -r error; do
-          echo "- $error" >&2
-        done
+        if [ -n "$errors" ]; then
+          echo "$errors" | while IFS= read -r error; do
+            echo "- $error" >&2
+          done
+        fi
+
+        if [ "$data_null" == "true" ] && [ -z "$errors" ]; then
+          echo "- GraphQL operation returned null data. Please verify your parameters and query." >&2
+        fi
+
         exit 1
       fi
 
+      echo "Successfully updated New Relic account link"
     EOT
 }
 }

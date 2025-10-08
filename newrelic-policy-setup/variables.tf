@@ -38,6 +38,7 @@ variable "newrelic_ingest_api_key" {
 variable "newrelic_user_api_key" {
   type        = string
   sensitive   = true
+  default = ""
   description = "The User API key for Linking the OCI Account to the New Relic account"
 }
 
@@ -88,5 +89,23 @@ variable "svc_user_name" {
   sensitive   = true
   default     = ""
   description = "Service user name for OCI access"
+}
+
+variable "create_vault" {
+  type        = bool
+  default     = true
+  description = "Variable to create vault for storing New Relic keys. True by default"
+}
+
+variable "user_key_secret_ocid" {
+  type        = string
+  default     = ""
+  description = "The OCID of the secret containing the New Relic User API key"
+}
+
+variable "ingest_key_secret_ocid" {
+    type        = string
+    default     = ""
+    description = "The OCID of the secret containing the New Relic Ingest License API key"
 }
 
