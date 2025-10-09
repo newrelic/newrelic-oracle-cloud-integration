@@ -16,7 +16,7 @@ jobs:
   build_docker_image:
     runs-on: ubuntu-latest
     environment:
-      name: build-test-env
+      name: production-environment
     steps:
       - name: Build Only FUNCTION_BUILD_VERSION
         run: |
