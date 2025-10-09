@@ -9,8 +9,15 @@ groupings:
     variables:
       - ${tenancy_ocid}
       - ${newrelic_endpoint}
+  - title: "Key Vault Configuration"
+    variables:
+      - ${create_vault}
       - ${newrelic_ingest_api_key}
       - ${newrelic_user_api_key}
+      - ${user_key_secret_ocid}
+      - ${ingest_key_secret_ocid}
+  - title: "New Relic Account Linking Configuration"
+    variables:
       - ${newrelic_account_id}
       - ${linked_account_id}
       - ${link_account_name}
@@ -80,16 +87,18 @@ variables:
     required: true
     sensitive: true
     visible:
-      or:
-        - eq:
-            - ${policy_stack}
-            - "METRICS,COMMON"
-        - eq:
-            - ${policy_stack}
-            - "LOGS,COMMON"
-        - eq:
-            - ${policy_stack}
-            - "METRICS,LOGS,COMMON"
+      and:
+        - ${create_vault}
+        - or:
+            - eq:
+                - ${policy_stack}
+                - "METRICS,COMMON"
+            - eq:
+                - ${policy_stack}
+                - "LOGS,COMMON"
+            - eq:
+                - ${policy_stack}
+                - "METRICS,LOGS,COMMON"
 
   newrelic_user_api_key:
     type: password
@@ -97,6 +106,7 @@ variables:
     description: The User API key for Linking the OCI Account to the New Relic account
     required: true
     sensitive: true
+    visible: ${create_vault}
 
   newrelic_account_id:
     type: string
@@ -164,7 +174,7 @@ variables:
   oci_domain_url:
     type: string
     title: OCI Domain URL
-    description: The OCI Domain URL, usually https://identity.<region>.oraclecloud.com
+    description: The OCI Domain URL.
     required: true
     visible: true
 
@@ -174,5 +184,45 @@ variables:
     description: The name of the service user created in OCI for New Relic to access the tenancy.
     required: true
     visible: true
+
+  create_vault:
+    type: boolean
+    title: Create Key Vault
+    description: Indicate whether a new Key Vault should be created for the New Relic secrets. If an existing secret is being used, its OCID must be provided.
+    required: true
+    default: true
+    visible: true
+
+  user_key_secret_ocid:
+    type: string
+    title: User Key Secret OCID
+    sensitive: true
+    description: The OCID of the secret that contains the New Relic user key.
+    required: true
+    visible:
+      not:
+        - ${create_vault}
+
+  ingest_key_secret_ocid:
+    type: string
+    title: Ingest License Key Secret OCID
+    sensitive: true
+    description: The OCID of the secret that contains the New Relic ingest license key.
+    required: true
+    visible:
+      and:
+        - eq:
+            - ${create_vault}
+            - false
+        - or:
+            - eq:
+                - ${policy_stack}
+                - "METRICS,COMMON"
+            - eq:
+                - ${policy_stack}
+                - "LOGS,COMMON"
+            - eq:
+                - ${policy_stack}
+                - "METRICS,LOGS,COMMON"
 
 
