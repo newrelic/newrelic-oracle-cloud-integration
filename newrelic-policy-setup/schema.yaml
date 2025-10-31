@@ -178,13 +178,6 @@ variables:
     required: true
     visible: true
 
-  svc_user_name:
-    type: string
-    title: Service User Name
-    description: The name of the service user created in OCI for New Relic to access the tenancy.
-    required: true
-    visible: true
-
   create_vault:
     type: boolean
     title: Create Key Vault

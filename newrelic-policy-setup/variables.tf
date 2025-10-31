@@ -84,13 +84,6 @@ variable "oci_domain_url" {
   description = "OCI domain URL"
 }
 
-variable "svc_user_name" {
-  type        = string
-  sensitive   = true
-  default     = ""
-  description = "Service user name for OCI access"
-}
-
 variable "create_vault" {
   type        = bool
   default     = true

@@ -66,7 +66,6 @@ mutation {
         ociClientId: "${var.client_id}"
         ociClientSecret: "${var.client_secret}"
         ociDomainUrl: "${var.oci_domain_url}"
-        ociSvcUserName: "${var.svc_user_name}"
         instrumentationType: "${local.instrumentation_type}"
       }
     }
