@@ -163,13 +163,12 @@ variables:
     visible: true
 
   client_secret:
-    type: string
+    type: password
     title: Client Secret
     description: The Client Secret for the OCI tenancy, needed for metadata polling from New Relic.
     required: true
     sensitive: true
-    password: true
-    confirmation: true
+    visible: true
 
   oci_domain_url:
     type: string
