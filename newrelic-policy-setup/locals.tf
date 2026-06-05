@@ -50,6 +50,7 @@ EOF
   newrelic_graphql_endpoint = {
     US = "https://api.newrelic.com/graphql"
     EU = "https://api.eu.newrelic.com/graphql"
+    JP = "https://api.jp.newrelic.com/graphql"
   }[var.newrelic_endpoint]
   linkAccount_graphql_query = <<EOF
 mutation {

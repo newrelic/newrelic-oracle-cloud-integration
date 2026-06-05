@@ -31,6 +31,8 @@ if nr_metric_endpoint_enum == 'US'or nr_metric_endpoint_enum == 'newrelic-metric
     nr_metric_endpoint = 'https://metric-api.newrelic.com/oci/metric'
 elif nr_metric_endpoint_enum == 'EU'or nr_metric_endpoint_enum == 'newrelic-eu-metric-api':
     nr_metric_endpoint = 'https://metric-api.eu.newrelic.com/oci/metric'
+elif nr_metric_endpoint_enum == 'JP'or nr_metric_endpoint_enum == 'newrelic-jp-metric-api':
+    nr_metric_endpoint = 'https://metric-api.jp.newrelic.com/oci/metric'
 else:
     nr_metric_endpoint = nr_metric_endpoint_enum
     logger.warning(f"Unknown NR_METRIC_ENDPOINT: {nr_metric_endpoint_enum}, Please ensure valid value is set")

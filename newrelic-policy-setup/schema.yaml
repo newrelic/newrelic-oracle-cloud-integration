@@ -72,13 +72,14 @@ variables:
   newrelic_endpoint:
     type: enum
     title: New Relic Endpoint
-    description: The endpoint to hit for sending the metrics. Varies by region [US|EU]
+    description: The endpoint to hit for sending the metrics. Varies by region [US|EU|JP]
     required: true
     allowMultiple: false
     default: US
     enum:
       - US
       - EU
+      - JP
 
   newrelic_ingest_api_key:
     type: password
