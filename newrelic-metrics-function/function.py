@@ -68,8 +68,8 @@ def fetch_api_key_from_vault(secret_ocid, vault_region) -> str:
         try:
             if detailed_logging_enabled:
                 logger.debug(
-                    f"Secret Vault Access time stamp: {datetime.datetime.now().isoformat(timespec='microseconds')} - "
-                    f"secret_ocid: {secret_ocid} in region: {vault_region}")
+                    f"Secret Vault access at {datetime.datetime.now().isoformat(timespec='microseconds')} "
+                    f"in region: {vault_region}")
 
             signer = oci.auth.signers.get_resource_principals_signer()
             secrets_client = oci.secrets.SecretsClient(config={}, signer=signer)
@@ -166,13 +166,15 @@ def _send_metrics_msg_to_newrelic(metrics_message) :
         return ""
 
     if detailed_logging_enabled:
-        logger.debug(f"Sending metrics to New Relic endpoint: {nr_metric_endpoint} with headers: {api_headers} with gzip payload: {compressed_payload}")
+        logger.debug(
+            f"Sending metrics to New Relic endpoint: {nr_metric_endpoint} "
+            f"(payload size: {len(compressed_payload)} bytes, license key configured: {nr_ingest_key is not None})")
 
     http_response = _session.post(nr_metric_endpoint, data=compressed_payload, headers=api_headers)
     http_response.raise_for_status()
 
     if detailed_logging_enabled:
-        logger.debug(f"Sent payload size={len(compressed_payload)} encoding={api_headers.get('content-encoding', None)}")
+        logger.debug(f"Sent payload size={len(compressed_payload)} bytes encoding=gzip")
     return http_response.text
 
 
