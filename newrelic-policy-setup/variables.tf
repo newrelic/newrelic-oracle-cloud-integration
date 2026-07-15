@@ -38,7 +38,7 @@ variable "newrelic_ingest_api_key" {
 variable "newrelic_user_api_key" {
   type        = string
   sensitive   = true
-  default = ""
+  default     = ""
   description = "The User API key for Linking the OCI Account to the New Relic account"
 }
 
@@ -97,8 +97,18 @@ variable "user_key_secret_ocid" {
 }
 
 variable "ingest_key_secret_ocid" {
-    type        = string
-    default     = ""
-    description = "The OCID of the secret containing the New Relic Ingest License API key"
+  type        = string
+  default     = ""
+  description = "The OCID of the secret containing the New Relic Ingest License API key"
+}
+
+variable "trust_type" {
+  type        = string
+  default     = "UPST"
+  description = "OCI WIF trust type. UPST (default, service-user impersonation) or RPST (claim-based ephemeral principal). Must match how your OCI identity propagation trust was created."
+  validation {
+    condition     = contains(["UPST", "RPST"], var.trust_type)
+    error_message = "trust_type must be either 'UPST' or 'RPST'."
+  }
 }
 
