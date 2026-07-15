@@ -21,7 +21,7 @@ locals {
   user_api_key = var.create_vault ? var.newrelic_user_api_key : (
     var.user_key_secret_ocid != "" ? base64decode(data.oci_secrets_secretbundle.user_api_key[0].secret_bundle_content[0].content) : var.newrelic_user_api_key
   )
-  updateLinkAccount_graphql_query  = <<EOF
+  updateLinkAccount_graphql_query = <<EOF
 mutation {
   cloudUpdateAccount(
     accountId: ${var.newrelic_account_id}
@@ -68,6 +68,7 @@ mutation {
         ociClientSecret: "${var.client_secret}"
         ociDomainUrl: "${var.oci_domain_url}"
         instrumentationType: "${local.instrumentation_type}"
+        trustType: "${var.trust_type}"
       }
     }
   ) {
