@@ -35,6 +35,7 @@ groupings:
             - ${policy_stack}
             - "METRICS,LOGS,COMMON"
     variables:
+      - ${trust_type}
       - ${client_id}
       - ${client_secret}
       - ${oci_domain_url}
@@ -155,6 +156,18 @@ variables:
     description: A string indicating which parts of the stack to deploy. Use comma-separated values from METRICS, LOGS, COMMON.
     visible: true
     required: true
+
+  trust_type:
+    type: enum
+    title: OCI WIF Trust Type
+    description: OCI WIF trust type. UPST (default, service-user impersonation) or RPST (claim-based ephemeral principal). Must match how your OCI identity propagation trust was created.
+    required: true
+    allowMultiple: false
+    default: UPST
+    enum:
+      - UPST
+      - RPST
+    visible: true
 
   client_id:
     type: string

@@ -10,6 +10,17 @@ This repository contains integrations to forward metrics from Oracle Cloud Infra
 * [New Relic Ingest Key & API Key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#license-key)
 * OCI user with Cloud Administrator role to create resources/stacks
 
+## Trust type: UPST or RPST
+
+New Relic supports two WIF trust types for OCI. Pick one before deploying the ORM stack.
+
+| Trust type | When to use | Setup docs |
+|------------|-------------|------------|
+| **UPST** (default) | Most customers. WIF impersonates a dedicated service user. Simplest path. | [UPST setup](https://docs-preview.newrelic.com/docs/oracle-cloud-infrastructure#upst-setup) |
+| **RPST** | Multi-account customers, customers hitting OCI's IAM policy-statement limit, or anyone who wants claim-based / tag-based authorization. | [RPST setup](https://docs-preview.newrelic.com/docs/oracle-cloud-infrastructure#rpst-setup) |
+
+The `trust_type` variable in the Policy Stack (below) defaults to `UPST`. Set it to `RPST` inside the OCI Resource Manager form if your identity-propagation trust was created with `subjectType: Resource`. If you also want tag-based scoping via `ext_resource_tag`, use the [terraform provider](https://registry.terraform.io/providers/newrelic/newrelic/latest/docs/resources/cloud_oci_link_account) — the ORM stack does not currently expose `resource_tag`.
+
 ## Installation
 
 For convenience, Terraform configurations are supplied to create OCI Resource Manager (ORM) stacks. Each sub-section below outlines pre-requisites, steps, and resulting resources created for either metrics or logs ingestion.

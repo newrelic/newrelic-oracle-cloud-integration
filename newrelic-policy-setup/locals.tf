@@ -68,6 +68,7 @@ mutation {
         ociClientSecret: "${var.client_secret}"
         ociDomainUrl: "${var.oci_domain_url}"
         instrumentationType: "${local.instrumentation_type}"
+        trustType: "${var.trust_type}"
       }
     }
   ) {
