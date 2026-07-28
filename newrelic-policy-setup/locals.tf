@@ -11,16 +11,33 @@ locals {
   newRelic_Metrics_Access_Policy   = contains(split(",", var.policy_stack), "METRICS")
   newRelic_Logs_Access_Policy      = contains(split(",", var.policy_stack), "LOGS")
   newRelic_Core_Integration_Policy = contains(split(",", var.policy_stack), "COMMON")
+  newRelic_Cost_Access_Policy      = contains(split(",", var.policy_stack), "COST")
   newrelic_logs_policy             = "newrelic_logs_policy_ORM_DO_NOT_REMOVE_${local.random_id}"
   newrelic_metrics_policy          = "newrelic_metrics_policy_ORM_DO_NOT_REMOVE_${local.random_id}"
   newrelic_common_policy           = "newrelic_common_policy_ORM_DO_NOT_REMOVE_${local.random_id}"
+  newrelic_cost_policy             = "newrelic_cost_policy_ORM_DO_NOT_REMOVE_${local.random_id}"
   dynamic_group_name               = "newrelic_dynamic_group_ORM_DO_NOT_REMOVE_${local.random_id}"
-  instrumentation_type             = local.newRelic_Metrics_Access_Policy && local.newRelic_Logs_Access_Policy && local.newRelic_Core_Integration_Policy ? "METRICS,LOGS" : (local.newRelic_Logs_Access_Policy && local.newRelic_Core_Integration_Policy) || local.newRelic_Logs_Access_Policy ? "LOGS" : (local.newRelic_Metrics_Access_Policy && local.newRelic_Core_Integration_Policy) || local.newRelic_Metrics_Access_Policy ? "METRICS" : ""
+  instrumentation_type             = join(",", compact([
+    local.newRelic_Metrics_Access_Policy ? "METRICS" : "",
+    local.newRelic_Logs_Access_Policy    ? "LOGS"    : "",
+    local.newRelic_Cost_Access_Policy    ? "COST"    : "",
+  ]))
   linked_account_id                = var.linked_account_id != null ? var.linked_account_id : ""
   random_id                        = substr(md5(timestamp()), 0, 4)
   user_api_key = var.create_vault ? var.newrelic_user_api_key : (
     var.user_key_secret_ocid != "" ? base64decode(data.oci_secrets_secretbundle.user_api_key[0].secret_bundle_content[0].content) : var.newrelic_user_api_key
   )
+  # Vault/compartment OCIDs for the update mutation — only populated when COMMON is present.
+  # The guard for [0].id MUST match the resource's count condition exactly, otherwise
+  # Terraform evaluates the reference at plan time when count=0 and fails.
+  # - vault secrets:  count = newRelic_Core_Integration_Policy && create_vault ? 1 : 0
+  # - compartment:    count = newRelic_Core_Integration_Policy ? 1 : 0
+  # When COMMON absent → empty string; beyond-api-v2 getValueOrDefault falls back to
+  # existing auth_label values — no overwrite.
+  update_ingest_vault_ocid  = local.newRelic_Core_Integration_Policy && var.create_vault ? oci_vault_secret.ingest_api_key[0].id : (local.newRelic_Core_Integration_Policy ? var.ingest_key_secret_ocid : "")
+  update_user_vault_ocid    = local.newRelic_Core_Integration_Policy && var.create_vault ? oci_vault_secret.user_api_key[0].id : (local.newRelic_Core_Integration_Policy ? var.user_key_secret_ocid : "")
+  update_compartment_ocid   = local.newRelic_Core_Integration_Policy ? oci_identity_compartment.newrelic_compartment[0].id : ""
+
   updateLinkAccount_graphql_query  = <<EOF
 mutation {
   cloudUpdateAccount(
@@ -30,6 +47,9 @@ mutation {
         linkedAccountId: ${local.linked_account_id}
         ociRegion: "${var.region}"
         instrumentationType: "${local.instrumentation_type}"
+        ${local.newRelic_Core_Integration_Policy ? "ingestVaultOcid: \"${local.update_ingest_vault_ocid}\"" : ""}
+        ${local.newRelic_Core_Integration_Policy ? "userVaultOcid: \"${local.update_user_vault_ocid}\"" : ""}
+        ${local.newRelic_Core_Integration_Policy ? "compartmentOcid: \"${local.update_compartment_ocid}\"" : ""}
       }
   }
 ) {

@@ -34,6 +34,18 @@ groupings:
         - eq:
             - ${policy_stack}
             - "METRICS,LOGS,COMMON"
+        - eq:
+            - ${policy_stack}
+            - "COST,COMMON"
+        - eq:
+            - ${policy_stack}
+            - "METRICS,COST,COMMON"
+        - eq:
+            - ${policy_stack}
+            - "LOGS,COST,COMMON"
+        - eq:
+            - ${policy_stack}
+            - "METRICS,LOGS,COST,COMMON"
     variables:
       - ${trust_type}
       - ${client_id}
@@ -101,6 +113,18 @@ variables:
             - eq:
                 - ${policy_stack}
                 - "METRICS,LOGS,COMMON"
+            - eq:
+                - ${policy_stack}
+                - "COST,COMMON"
+            - eq:
+                - ${policy_stack}
+                - "METRICS,COST,COMMON"
+            - eq:
+                - ${policy_stack}
+                - "LOGS,COST,COMMON"
+            - eq:
+                - ${policy_stack}
+                - "METRICS,LOGS,COST,COMMON"
 
   newrelic_user_api_key:
     type: password
@@ -131,6 +155,18 @@ variables:
         - eq:
             - ${policy_stack}
             - "LOGS"
+        - eq:
+            - ${policy_stack}
+            - "COST"
+        - eq:
+            - ${policy_stack}
+            - "METRICS,COST"
+        - eq:
+            - ${policy_stack}
+            - "LOGS,COST"
+        - eq:
+            - ${policy_stack}
+            - "METRICS,LOGS,COST"
 
 
   link_account_name:
@@ -149,11 +185,23 @@ variables:
         - eq:
             - ${policy_stack}
             - "METRICS,LOGS,COMMON"
+        - eq:
+            - ${policy_stack}
+            - "COST,COMMON"
+        - eq:
+            - ${policy_stack}
+            - "METRICS,COST,COMMON"
+        - eq:
+            - ${policy_stack}
+            - "LOGS,COST,COMMON"
+        - eq:
+            - ${policy_stack}
+            - "METRICS,LOGS,COST,COMMON"
 
   policy_stack:
     type: string
     title: New Relic Policy Instrumentation
-    description: A string indicating which parts of the stack to deploy. Use comma-separated values from METRICS, LOGS, COMMON.
+    description: A string indicating which parts of the stack to deploy. Use comma-separated values from METRICS, LOGS, COMMON, COST.
     visible: true
     required: true
 
@@ -230,5 +278,17 @@ variables:
             - eq:
                 - ${policy_stack}
                 - "METRICS,LOGS,COMMON"
+            - eq:
+                - ${policy_stack}
+                - "COST,COMMON"
+            - eq:
+                - ${policy_stack}
+                - "METRICS,COST,COMMON"
+            - eq:
+                - ${policy_stack}
+                - "LOGS,COST,COMMON"
+            - eq:
+                - ${policy_stack}
+                - "METRICS,LOGS,COST,COMMON"
 
 
