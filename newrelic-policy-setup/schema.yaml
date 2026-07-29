@@ -163,7 +163,6 @@ variables:
     description: OCI WIF trust type. UPST (default, service-user impersonation) or RPST (claim-based ephemeral principal). Must match how your OCI identity propagation trust was created.
     required: true
     allowMultiple: false
-    default: UPST
     enum:
       - UPST
       - RPST
