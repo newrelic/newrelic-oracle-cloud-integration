@@ -1,0 +1,115 @@
+title: New Relic WIF Setup
+name: newrelic-wif-setup
+description: Creates the OCI authentication foundation (OAuth apps, IAM, Identity Propagation Trust) that New Relic needs to integrate with your OCI tenancy.
+schemaVersion: 1.1.0
+version: 1.0
+locale: "en"
+
+groupings:
+  - title: "OCI Configuration"
+    variables:
+      - ${tenancy_ocid}
+      - ${identity_domain_name}
+      - ${trust_name}
+      - ${resource_prefix}
+  - title: "New Relic Configuration"
+    variables:
+      - ${newrelic_region}
+      - ${trust_type}
+      - ${newrelic_account_id}
+
+variables:
+  tenancy_ocid:
+    type: string
+    title: Tenancy OCID
+    description: "Your OCI tenancy OCID. Find it at: OCI Console → Profile → Tenancy"
+    required: true
+    visible: true
+
+  current_user_ocid:
+    type: string
+    title: User OCID
+    description: "Auto-populated by ORM. Do not modify."
+    required: true
+    visible: false
+
+  region:
+    type: string
+    title: Region
+    description: "Auto-populated by ORM. Do not modify."
+    required: true
+    visible: false
+
+  compartment_ocid:
+    type: string
+    title: Compartment OCID
+    description: "Auto-populated by ORM. Do not modify."
+    required: true
+    visible: false
+
+  identity_domain_name:
+    type: string
+    title: Identity Domain Name
+    description: "Name of your OCI Identity Domain. Usually 'Default' unless you have custom domains."
+    default: Default
+    required: true
+    visible: true
+
+  newrelic_region:
+    type: enum
+    title: New Relic Region
+    description: "The region of your New Relic account."
+    required: true
+    allowMultiple: false
+    default: US
+    enum:
+      - US
+      - EU
+      - JP
+
+  trust_type:
+    type: enum
+    title: Trust Type
+    description: "UPST (default): impersonates a service user. RPST: claim-based, recommended for multi-account customers or those hitting OCI IAM policy limits."
+    required: true
+    allowMultiple: false
+    default: UPST
+    enum:
+      - UPST
+      - RPST
+
+  newrelic_account_id:
+    type: string
+    title: New Relic Account ID
+    description: "Required when Trust Type is RPST. Your New Relic account ID."
+    required: false
+    visible:
+      eq:
+        - ${trust_type}
+        - "RPST"
+
+  trust_name:
+    type: string
+    title: Trust Name
+    description: "Name of the Identity Propagation Trust created in OCI Identity Domain. Change this only if you have multiple New Relic integrations in the same Identity Domain — each trust must have a unique name."
+    default: newrelic-trust-setup
+    required: false
+    visible: true
+
+  resource_prefix:
+    type: string
+    title: Resource Name Prefix
+    description: "Prefix applied to all OCI resources created by this stack (e.g. groups, policies, OAuth apps). Customize if you have naming conventions or multiple environments."
+    default: newrelic
+    required: false
+    visible: true
+
+  activate_oauth_apps:
+    type: boolean
+    title: Activate OAuth Apps
+    description: "Activate the OAuth applications immediately on creation."
+    default: true
+    required: false
+    visible: false
+
+

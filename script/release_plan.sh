@@ -3,8 +3,10 @@
 # Define the directories to be zipped
 METRICS_DIR="newrelic-metrics-setup"
 POLICY_DIR="newrelic-policy-setup"
+WIF_DIR="newrelic-wif-setup"
 METRICS_ZIP="newrelic-metrics-setup.zip"
 POLICY_ZIP="newrelic-policy-setup.zip"
+WIF_ZIP="newrelic-wif-setup.zip"
 
 # Check if the directories exist
 if [ ! -d "$METRICS_DIR" ]; then
@@ -17,12 +19,20 @@ if [ ! -d "$POLICY_DIR" ]; then
   exit 1
 fi
 
+if [ ! -d "$WIF_DIR" ]; then
+  echo "Error: Directory $WIF_DIR does not exist."
+  exit 1
+fi
+
 # Create the zip files
 echo "Creating metrics zip file: $METRICS_ZIP"
 zip -r "$METRICS_ZIP" "$METRICS_DIR"
 
 echo "Creating policy zip file: $POLICY_ZIP"
 zip -r "$POLICY_ZIP" "$POLICY_DIR"
+
+echo "Creating WIF setup zip file: $WIF_ZIP"
+zip -r "$WIF_ZIP" "$WIF_DIR"
 
 # Fetch the latest tags
 git fetch --tags
@@ -56,6 +66,6 @@ release_heading="newrelic-oci - ${next_tag}"
 release_notes="Features
 
 ${latest_commit_message}"
-gh release create "$next_tag" "$METRICS_ZIP" "$POLICY_ZIP" --title "$release_heading" --notes "$release_notes"
+gh release create "$next_tag" "$METRICS_ZIP" "$POLICY_ZIP" "$WIF_ZIP" --title "$release_heading" --notes "$release_notes"
 
 echo "Release created successfully with tag: $next_tag"
