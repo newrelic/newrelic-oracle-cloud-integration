@@ -238,17 +238,19 @@ resource "null_resource" "trust_setup" {
             exit 1
           fi
 
-          # PATCH the existing trust with the full updated body (replaces oauthClients,
-          # impersonationServiceUsers/impersonatingResource with current values)
-          PATCH_BODY=$(echo '${local.trust_body}' | jq '{
-            schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
-            Operations: [
-              {op: "replace", path: "oauthClients", value: .oauthClients},
-              {op: "replace", path: "publicKeyEndpoint", value: .publicKeyEndpoint}
-            ] + (if .impersonationServiceUsers then [{op: "replace", path: "impersonationServiceUsers", value: .impersonationServiceUsers}] else [] end)
-              + (if .impersonatingResource then [{op: "replace", path: "impersonatingResource", value: .impersonatingResource}] else [] end)
-              + (if .claimPropagations then [{op: "replace", path: "claimPropagations", value: .claimPropagations}] else [] end)
-          }')
+          # Build PATCH body to update the existing trust with the new token exchange app.
+          # Extract individual values from the trust body to avoid complex jq expressions
+          # that break under Terraform heredoc shell escaping.
+          NEW_CLIENT=$(echo '${local.trust_body}' | jq -r '.oauthClients[0]')
+          JWKS_URL=$(echo '${local.trust_body}' | jq -r '.publicKeyEndpoint')
+
+          if [ '${local.is_upst}' = 'true' ]; then
+            NEW_USER_ID=$(echo '${local.trust_body}' | jq -r '.impersonationServiceUsers[0].value')
+            NEW_RULE=$(echo '${local.trust_body}' | jq -r '.impersonationServiceUsers[0].rule')
+            PATCH_BODY='{"schemas":["urn:ietf:params:scim:api:messages:2.0:PatchOp"],"Operations":[{"op":"replace","path":"oauthClients","value":["'"$NEW_CLIENT"'"]},{"op":"replace","path":"publicKeyEndpoint","value":"'"$JWKS_URL"'"},{"op":"replace","path":"impersonationServiceUsers","value":[{"rule":"'"$NEW_RULE"'","value":"'"$NEW_USER_ID"'"}]}]}'
+          else
+            PATCH_BODY='{"schemas":["urn:ietf:params:scim:api:messages:2.0:PatchOp"],"Operations":[{"op":"replace","path":"oauthClients","value":["'"$NEW_CLIENT"'"]},{"op":"replace","path":"publicKeyEndpoint","value":"'"$JWKS_URL"'"}]}'
+          fi
 
           PATCH_RESPONSE=$(curl --silent --location \
             --request PATCH \
