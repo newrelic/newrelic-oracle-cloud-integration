@@ -77,11 +77,11 @@ resource "oci_identity_domains_app" "admin_app" {
   provisioner "local-exec" {
     when    = destroy
     command = <<EOT
-      oci identity-domains app patch \
-        --endpoint "${self.idcs_endpoint}" \
+      oci --no-retry --endpoint "${self.idcs_endpoint}" identity-domains app patch \
         --app-id "${self.id}" \
+        --schemas '["urn:ietf:params:scim:api:messages:2.0:PatchOp"]' \
         --operations '[{"op":"replace","path":"active","value":false}]' \
-        --no-retry 2>&1 || true
+        2>&1 || true
       sleep 5
     EOT
   }
@@ -112,11 +112,11 @@ resource "oci_identity_domains_app" "token_exchange_app" {
   provisioner "local-exec" {
     when    = destroy
     command = <<EOT
-      oci identity-domains app patch \
-        --endpoint "${self.idcs_endpoint}" \
+      oci --no-retry --endpoint "${self.idcs_endpoint}" identity-domains app patch \
         --app-id "${self.id}" \
+        --schemas '["urn:ietf:params:scim:api:messages:2.0:PatchOp"]' \
         --operations '[{"op":"replace","path":"active","value":false}]' \
-        --no-retry 2>&1 || true
+        2>&1 || true
       sleep 5
     EOT
   }
