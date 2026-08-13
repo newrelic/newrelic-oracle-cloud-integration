@@ -70,11 +70,10 @@ variables:
   trust_type:
     type: enum
     title: Trust Type
-    description: "Pre-filled from your New Relic setup. UPST: service-user impersonation. RPST: claim-based ephemeral principal."
+    description: "Pre-filled from your New Relic setup — do not change. UPST: service-user impersonation. RPST: claim-based ephemeral principal."
     required: true
     allowMultiple: false
     default: UPST
-    disabled: true
     enum:
       - UPST
       - RPST
@@ -82,10 +81,12 @@ variables:
   newrelic_account_id:
     type: string
     title: New Relic Account ID
-    description: "Pre-filled from your New Relic account."
+    description: "Pre-filled from your New Relic account — do not change. Required for RPST to scope the IAM policy to your account."
     required: false
-    disabled: true
-    visible: true
+    visible:
+      eq:
+        - ${trust_type}
+        - "RPST"
 
   trust_name:
     type: string
