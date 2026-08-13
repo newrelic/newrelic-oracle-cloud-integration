@@ -78,7 +78,7 @@ resource "oci_identity_domains_app" "admin_app" {
     when    = destroy
     command = <<EOT
       oci identity-domains app patch \
-        --idcs-endpoint "${self.idcs_endpoint}" \
+        --endpoint "${self.idcs_endpoint}" \
         --app-id "${self.id}" \
         --operations '[{"op":"replace","path":"active","value":false}]' \
         --force --no-retry 2>&1 || true
@@ -113,7 +113,7 @@ resource "oci_identity_domains_app" "token_exchange_app" {
     when    = destroy
     command = <<EOT
       oci identity-domains app patch \
-        --idcs-endpoint "${self.idcs_endpoint}" \
+        --endpoint "${self.idcs_endpoint}" \
         --app-id "${self.id}" \
         --operations '[{"op":"replace","path":"active","value":false}]' \
         --force --no-retry 2>&1 || true
