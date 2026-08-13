@@ -72,6 +72,20 @@ resource "oci_identity_domains_app" "admin_app" {
     value = "CustomWebAppTemplateId"
   }
 
+  # OCI requires apps to be deactivated before they can be deleted.
+  # This provisioner runs before Terraform sends the DELETE request.
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<EOT
+      oci identity-domains app patch \
+        --idcs-endpoint "${self.idcs_endpoint}" \
+        --app-id "${self.id}" \
+        --operations '[{"op":"replace","path":"active","value":false}]' \
+        --force --no-retry 2>&1 || true
+      sleep 5
+    EOT
+  }
+
   lifecycle {
     ignore_changes = [schemas]
   }
@@ -91,6 +105,20 @@ resource "oci_identity_domains_app" "token_exchange_app" {
 
   based_on_template {
     value = "CustomWebAppTemplateId"
+  }
+
+  # OCI requires apps to be deactivated before they can be deleted.
+  # This provisioner runs before Terraform sends the DELETE request.
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<EOT
+      oci identity-domains app patch \
+        --idcs-endpoint "${self.idcs_endpoint}" \
+        --app-id "${self.id}" \
+        --operations '[{"op":"replace","path":"active","value":false}]' \
+        --force --no-retry 2>&1 || true
+      sleep 5
+    EOT
   }
 
   lifecycle {
