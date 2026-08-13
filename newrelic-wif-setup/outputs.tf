@@ -9,9 +9,8 @@ output "client_id" {
 }
 
 output "client_secret" {
-  description = "Paste this into New Relic's OCI Client Secret field (click Show to reveal)"
+  description = "Paste this into New Relic's OCI Client Secret field"
   value       = null_resource.trust_setup.triggers["client_secret"]
-  sensitive   = true
 }
 
 output "trust_type" {
