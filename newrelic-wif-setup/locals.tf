@@ -2,6 +2,11 @@ locals {
   identity_domain_url = trimsuffix(data.oci_identity_domains.domain.domains[0].url, ":443")
   suffix              = "orm"
 
+  # Short random ID appended to the service user name to avoid 409 conflicts
+  # when a previous stack's user is soft-deleted but not yet purged by OCI.
+  # Matches the pattern used by the policy-setup stack.
+  random_id = substr(md5(timestamp()), 0, 4)
+
   is_upst = var.trust_type == "UPST"
   is_rpst = var.trust_type == "RPST"
 

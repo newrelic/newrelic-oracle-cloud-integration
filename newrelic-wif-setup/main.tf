@@ -18,7 +18,7 @@ resource "oci_identity_domains_user" "svc_user" {
 
   idcs_endpoint = local.identity_domain_url
   schemas       = ["urn:ietf:params:scim:schemas:core:2.0:User"]
-  user_name     = "${local.resource_prefix}-wif-svc-user-${local.suffix}"
+  user_name     = "${local.resource_prefix}-wif-svc-user-${local.suffix}-${local.random_id}"
 
   urnietfparamsscimschemasoracleidcsextensionuser_user {
     service_user = true
