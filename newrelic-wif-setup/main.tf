@@ -200,14 +200,47 @@ locals {
 }
 
 # Fetch IDA OAuth token and create the Identity Propagation Trust in one step.
-# client_secret is stored in triggers because OCI never returns it in GET responses —
-# ORM's post-apply refresh overwrites oci_identity_domains_app.token_exchange_app.client_secret
-# with "". Triggers are user-owned state and are never refreshed from the provider.
-# We store it here (not in a separate null_resource) because this resource runs after
-# admin_app_domain_admin_grant, by which time client_secret is confirmed available.
+# All values needed for both create and destroy are captured in triggers at apply
+# time (when they are confirmed available). Triggers survive ORM's post-apply
+# refresh and are accessible in destroy provisioners via self.triggers.*.
 resource "null_resource" "trust_setup" {
   triggers = {
-    client_secret = oci_identity_domains_app.token_exchange_app.client_secret
+    client_secret       = oci_identity_domains_app.token_exchange_app.client_secret
+    admin_app_name      = oci_identity_domains_app.admin_app.name
+    admin_app_secret    = oci_identity_domains_app.admin_app.client_secret
+    issuer              = local.is_upst ? local.newrelic_config.issuer_name : local.newrelic_config.rpst_issuer_name
+    identity_domain_url = local.identity_domain_url
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<EOT
+      OAUTH_TOKEN=$(printf '%s:%s' '${self.triggers.admin_app_name}' '${self.triggers.admin_app_secret}' | base64 | tr -d '\n')
+      TOKEN_RESPONSE=$(curl --silent --location '${self.triggers.identity_domain_url}/oauth2/v1/token' \
+        --header 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8' \
+        --header "Authorization: Basic $OAUTH_TOKEN" \
+        --data 'grant_type=client_credentials&scope=urn:opc:idm:__myscopes__')
+      ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token // empty')
+      if [ -z "$ACCESS_TOKEN" ] || [ "$ACCESS_TOKEN" = "null" ]; then
+        echo "Warning: could not get token to delete trust. Manual cleanup may be needed."
+        exit 0
+      fi
+
+      ISSUER='${self.triggers.issuer}'
+      EXISTING=$(curl --silent \
+        '${self.triggers.identity_domain_url}/admin/v1/IdentityPropagationTrusts?filter=issuer+eq+%22'"$ISSUER"'%22' \
+        --header "Authorization: Bearer $ACCESS_TOKEN")
+      TRUST_ID=$(echo "$EXISTING" | jq -r '.Resources[0].id // empty')
+
+      if [ -n "$TRUST_ID" ] && [ "$TRUST_ID" != "null" ]; then
+        curl --silent --request DELETE \
+          '${self.triggers.identity_domain_url}/admin/v1/IdentityPropagationTrusts/'"$TRUST_ID" \
+          --header "Authorization: Bearer $ACCESS_TOKEN"
+        echo "Trust deleted: $TRUST_ID"
+      else
+        echo "No trust found for issuer $ISSUER, nothing to delete."
+      fi
+    EOT
   }
   provisioner "local-exec" {
     command = <<EOT
