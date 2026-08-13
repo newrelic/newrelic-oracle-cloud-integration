@@ -81,7 +81,7 @@ resource "oci_identity_domains_app" "admin_app" {
         --endpoint "${self.idcs_endpoint}" \
         --app-id "${self.id}" \
         --operations '[{"op":"replace","path":"active","value":false}]' \
-        --force --no-retry 2>&1 || true
+        --no-retry 2>&1 || true
       sleep 5
     EOT
   }
@@ -116,7 +116,7 @@ resource "oci_identity_domains_app" "token_exchange_app" {
         --endpoint "${self.idcs_endpoint}" \
         --app-id "${self.id}" \
         --operations '[{"op":"replace","path":"active","value":false}]' \
-        --force --no-retry 2>&1 || true
+        --no-retry 2>&1 || true
       sleep 5
     EOT
   }
