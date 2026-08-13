@@ -81,12 +81,9 @@ variables:
   newrelic_account_id:
     type: string
     title: New Relic Account ID
-    description: "Pre-filled from your New Relic account — do not change. Required for RPST to scope the IAM policy to your account."
+    description: "Pre-filled from your New Relic account — do not change. Required for RPST to scope the IAM policy to your account. Leave empty if using UPST."
     required: false
-    visible:
-      eq:
-        - ${trust_type}
-        - "RPST"
+    visible: true
 
   trust_name:
     type: string
