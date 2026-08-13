@@ -224,7 +224,46 @@ resource "null_resource" "trust_setup" {
       else
         ERROR_MESSAGE=$(echo "$TRUST_RESPONSE" | jq -r '.detail // .error // "Unknown"')
         if echo "$ERROR_MESSAGE" | grep -qi "same issuer already exists"; then
-          echo "Trust already exists for this issuer — existing WIF trust will be used."
+          echo "Trust already exists — updating it to use the new token exchange app..."
+
+          # Find the existing trust ID by issuer
+          ISSUER=$(echo '${local.trust_body}' | jq -r '.issuer')
+          EXISTING=$(curl --silent \
+            "${local.identity_domain_url}/admin/v1/IdentityPropagationTrusts?filter=issuer+eq+%22$ISSUER%22" \
+            --header "Authorization: Bearer $ACCESS_TOKEN")
+          EXISTING_ID=$(echo "$EXISTING" | jq -r '.Resources[0].id // empty')
+
+          if [ -z "$EXISTING_ID" ] || [ "$EXISTING_ID" = "null" ]; then
+            echo "Could not find existing trust for issuer $ISSUER" >&2
+            exit 1
+          fi
+
+          # PATCH the existing trust with the full updated body (replaces oauthClients,
+          # impersonationServiceUsers/impersonatingResource with current values)
+          PATCH_BODY=$(echo '${local.trust_body}' | jq '{
+            schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+            Operations: [
+              {op: "replace", path: "oauthClients", value: .oauthClients},
+              {op: "replace", path: "publicKeyEndpoint", value: .publicKeyEndpoint}
+            ] + (if .impersonationServiceUsers then [{op: "replace", path: "impersonationServiceUsers", value: .impersonationServiceUsers}] else [] end)
+              + (if .impersonatingResource then [{op: "replace", path: "impersonatingResource", value: .impersonatingResource}] else [] end)
+              + (if .claimPropagations then [{op: "replace", path: "claimPropagations", value: .claimPropagations}] else [] end)
+          }')
+
+          PATCH_RESPONSE=$(curl --silent --location \
+            --request PATCH \
+            "${local.identity_domain_url}/admin/v1/IdentityPropagationTrusts/$EXISTING_ID" \
+            --header 'Content-Type: application/json' \
+            --header "Authorization: Bearer $ACCESS_TOKEN" \
+            --data "$PATCH_BODY")
+
+          UPDATED_ID=$(echo "$PATCH_RESPONSE" | jq -r '.id // empty')
+          if [ -n "$UPDATED_ID" ] && [ "$UPDATED_ID" != "null" ]; then
+            echo "Trust updated: $UPDATED_ID"
+          else
+            echo "Trust update failed: $(echo "$PATCH_RESPONSE" | jq -r '.detail // .error // "Unknown"')" >&2
+            exit 1
+          fi
         else
           echo "Trust creation failed: $ERROR_MESSAGE" >&2
           exit 1
