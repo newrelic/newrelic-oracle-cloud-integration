@@ -24,6 +24,18 @@ resource "oci_identity_domains_user" "svc_user" {
     service_user = true
   }
 
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<EOT
+      oci --no-retry --endpoint "${self.idcs_endpoint}" identity-domains user patch \
+        --user-id "${self.id}" \
+        --schemas '["urn:ietf:params:scim:api:messages:2.0:PatchOp"]' \
+        --operations '[{"op":"replace","path":"active","value":false}]' \
+        2>&1 || true
+      sleep 5
+    EOT
+  }
+
   lifecycle {
     ignore_changes = [schemas]
   }
