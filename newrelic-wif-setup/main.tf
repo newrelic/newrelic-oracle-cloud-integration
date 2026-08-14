@@ -269,54 +269,15 @@ resource "null_resource" "trust_setup" {
       else
         ERROR_MESSAGE=$(echo "$TRUST_RESPONSE" | jq -r '.detail // .error // "Unknown"')
         if echo "$ERROR_MESSAGE" | grep -qi "same issuer already exists"; then
-          # OCI enforces one trust per issuer per Identity Domain. If a trust
-          # already exists (from a previous stack run or manual setup), we update
-          # it to point at this stack's apps. Any integration using the previous
-          # token exchange app will stop working until reconfigured in New Relic.
-          # The NR UI prevents reaching this path if the customer selects
-          # "WIF already configured" — this branch only runs on re-deploy.
-          echo "Trust already exists — updating it to use the new token exchange app..."
-
-          # Find the existing trust ID by issuer
-          ISSUER=$(echo '${local.trust_body}' | jq -r '.issuer')
-          EXISTING=$(curl --silent \
-            "${local.identity_domain_url}/admin/v1/IdentityPropagationTrusts?filter=issuer+eq+%22$ISSUER%22" \
-            --header "Authorization: Bearer $ACCESS_TOKEN")
-          EXISTING_ID=$(echo "$EXISTING" | jq -r '.Resources[0].id // empty')
-
-          if [ -z "$EXISTING_ID" ] || [ "$EXISTING_ID" = "null" ]; then
-            echo "Could not find existing trust for issuer $ISSUER" >&2
-            exit 1
-          fi
-
-          # Build PATCH body to update the existing trust with the new token exchange app.
-          # Extract individual values from the trust body to avoid complex jq expressions
-          # that break under Terraform heredoc shell escaping.
-          NEW_CLIENT=$(echo '${local.trust_body}' | jq -r '.oauthClients[0]')
-          JWKS_URL=$(echo '${local.trust_body}' | jq -r '.publicKeyEndpoint')
-
-          if [ '${local.is_upst}' = 'true' ]; then
-            NEW_USER_ID=$(echo '${local.trust_body}' | jq -r '.impersonationServiceUsers[0].value')
-            NEW_RULE=$(echo '${local.trust_body}' | jq -r '.impersonationServiceUsers[0].rule')
-            PATCH_BODY='{"schemas":["urn:ietf:params:scim:api:messages:2.0:PatchOp"],"Operations":[{"op":"replace","path":"oauthClients","value":["'"$NEW_CLIENT"'"]},{"op":"replace","path":"publicKeyEndpoint","value":"'"$JWKS_URL"'"},{"op":"replace","path":"impersonationServiceUsers","value":[{"rule":"'"$NEW_RULE"'","value":"'"$NEW_USER_ID"'"}]}]}'
-          else
-            PATCH_BODY='{"schemas":["urn:ietf:params:scim:api:messages:2.0:PatchOp"],"Operations":[{"op":"replace","path":"oauthClients","value":["'"$NEW_CLIENT"'"]},{"op":"replace","path":"publicKeyEndpoint","value":"'"$JWKS_URL"'"}]}'
-          fi
-
-          PATCH_RESPONSE=$(curl --silent --location \
-            --request PATCH \
-            "${local.identity_domain_url}/admin/v1/IdentityPropagationTrusts/$EXISTING_ID" \
-            --header 'Content-Type: application/json' \
-            --header "Authorization: Bearer $ACCESS_TOKEN" \
-            --data "$PATCH_BODY")
-
-          UPDATED_ID=$(echo "$PATCH_RESPONSE" | jq -r '.id // empty')
-          if [ -n "$UPDATED_ID" ] && [ "$UPDATED_ID" != "null" ]; then
-            echo "Trust updated: $UPDATED_ID"
-          else
-            echo "Trust update failed: $(echo "$PATCH_RESPONSE" | jq -r '.detail // .error // "Unknown"')" >&2
-            exit 1
-          fi
+          echo "ERROR: A Workload Identity Federation trust already exists for this tenancy." >&2
+          echo "" >&2
+          echo "If you have an existing WIF setup that is actively used, do not deploy this" >&2
+          echo "stack — select 'WIF already configured' in the New Relic UI instead." >&2
+          echo "" >&2
+          echo "If you want to replace it (e.g. after destroying a previous stack run), delete" >&2
+          echo "the existing trust first: OCI Console → Identity Domains → ${var.identity_domain_name}" >&2
+          echo "→ Security → Identity Propagation Trusts, then re-apply this stack." >&2
+          exit 1
         else
           echo "Trust creation failed: $ERROR_MESSAGE" >&2
           exit 1
