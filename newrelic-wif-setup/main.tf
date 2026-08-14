@@ -1,3 +1,13 @@
+# Stable random suffix for the service user name. Generated once at stack
+# creation and stored in state. Avoids 409 conflicts when OCI soft-deletes
+# the user from a previous stack run and hasn't fully purged it yet.
+# Unlike timestamp(), this value is stable across re-applies.
+resource "random_string" "svc_user_suffix" {
+  length  = 4
+  upper   = false
+  special = false
+}
+
 # IAM Group for service user (UPST only)
 resource "oci_identity_domains_group" "newrelic_service_group" {
   count = local.is_upst ? 1 : 0
@@ -18,7 +28,7 @@ resource "oci_identity_domains_user" "svc_user" {
 
   idcs_endpoint = local.identity_domain_url
   schemas       = ["urn:ietf:params:scim:schemas:core:2.0:User"]
-  user_name     = "${local.resource_prefix}-wif-svc-user-${local.suffix}-${local.random_id}"
+  user_name     = "${local.resource_prefix}-wif-svc-user-${local.suffix}-${random_string.svc_user_suffix.result}"
 
   urnietfparamsscimschemasoracleidcsextensionuser_user {
     service_user = true
@@ -269,6 +279,12 @@ resource "null_resource" "trust_setup" {
       else
         ERROR_MESSAGE=$(echo "$TRUST_RESPONSE" | jq -r '.detail // .error // "Unknown"')
         if echo "$ERROR_MESSAGE" | grep -qi "same issuer already exists"; then
+          # OCI enforces one trust per issuer per Identity Domain. If a trust
+          # already exists (from a previous stack run or manual setup), we update
+          # it to point at this stack's apps. Any integration using the previous
+          # token exchange app will stop working until reconfigured in New Relic.
+          # The NR UI prevents reaching this path if the customer selects
+          # "WIF already configured" — this branch only runs on re-deploy.
           echo "Trust already exists — updating it to use the new token exchange app..."
 
           # Find the existing trust ID by issuer

@@ -15,7 +15,7 @@ variable "region" {
 
 variable "compartment_ocid" {
   type        = string
-  description = "Compartment OCID. Do not modify — auto-populated by ORM."
+  description = "Auto-populated by ORM. Not used directly — all WIF IAM resources are created at tenancy root."
 }
 
 variable "identity_domain_name" {
