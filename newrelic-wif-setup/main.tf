@@ -1,0 +1,306 @@
+# IAM Group for service user (UPST only)
+resource "oci_identity_domains_group" "newrelic_service_group" {
+  count = local.is_upst ? 1 : 0
+
+  idcs_endpoint  = local.identity_domain_url
+  schemas        = ["urn:ietf:params:scim:schemas:core:2.0:Group"]
+  display_name   = "${local.resource_prefix}-svc-user-group-${local.suffix}"
+  attribute_sets = ["all"]
+
+  lifecycle {
+    ignore_changes = [schemas]
+  }
+}
+
+# Service user (UPST only)
+resource "oci_identity_domains_user" "svc_user" {
+  count = local.is_upst ? 1 : 0
+
+  idcs_endpoint = local.identity_domain_url
+  schemas       = ["urn:ietf:params:scim:schemas:core:2.0:User"]
+  user_name     = "${local.resource_prefix}-wif-svc-user-${local.suffix}"
+
+  urnietfparamsscimschemasoracleidcsextensionuser_user {
+    service_user = true
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<EOT
+      oci --no-retry --endpoint "${self.idcs_endpoint}" identity-domains user patch \
+        --user-id "${self.id}" \
+        --schemas '["urn:ietf:params:scim:api:messages:2.0:PatchOp"]' \
+        --operations '[{"op":"replace","path":"active","value":false}]' \
+        2>&1 || true
+      sleep 5
+    EOT
+  }
+
+  lifecycle {
+    ignore_changes = [schemas]
+  }
+}
+
+# Add service user to group (UPST only)
+resource "oci_identity_user_group_membership" "svc_user_group_membership" {
+  count    = local.is_upst ? 1 : 0
+  group_id = oci_identity_domains_group.newrelic_service_group[0].ocid
+  user_id  = oci_identity_domains_user.svc_user[0].ocid
+}
+
+# IAM policy — always at tenancy root since it grants read access across the tenancy
+# UPST: group-based; RPST: claim-based on ext_account_id + ext_tenancy_id
+resource "oci_identity_policy" "newrelic_service_policy" {
+  compartment_id = var.tenancy_ocid
+  name           = "${local.resource_prefix}-svc-user-policy-${local.suffix}"
+  description    = "[DO NOT REMOVE] Policy granting New Relic read-only access to OCI resources"
+
+  statements = local.is_upst ? [
+    "Allow group '${oci_identity_domains_group.newrelic_service_group[0].display_name}' to read all-resources in tenancy",
+    ] : [
+    format(
+      "allow any-user to read all-resources in tenancy where all { request.principal.type = 'identityfederateddomainapp', request.principal.ext_account_id = '%s', request.principal.ext_tenancy_id = '%s' }",
+      var.newrelic_account_id,
+      var.tenancy_ocid
+    ),
+  ]
+
+  depends_on = [oci_identity_domains_group.newrelic_service_group]
+}
+
+# Admin app — elevated temporary app used only to create the Identity Propagation Trust
+resource "oci_identity_domains_app" "admin_app" {
+  idcs_endpoint   = local.identity_domain_url
+  schemas         = ["urn:ietf:params:scim:schemas:oracle:idcs:App"]
+  display_name    = "${local.resource_prefix}-ida-app-${local.suffix}"
+  active          = var.activate_oauth_apps
+  allowed_grants  = ["client_credentials"]
+  is_oauth_client = true
+  client_type     = "confidential"
+  bypass_consent  = true
+  attribute_sets  = ["all"]
+
+  based_on_template {
+    value = "CustomWebAppTemplateId"
+  }
+
+  # OCI requires apps to be deactivated before they can be deleted.
+  # This provisioner runs before Terraform sends the DELETE request.
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<EOT
+      oci --no-retry --endpoint "${self.idcs_endpoint}" identity-domains app patch \
+        --app-id "${self.id}" \
+        --schemas '["urn:ietf:params:scim:api:messages:2.0:PatchOp"]' \
+        --operations '[{"op":"replace","path":"active","value":false}]' \
+        2>&1 || true
+      sleep 5
+    EOT
+  }
+
+  lifecycle {
+    ignore_changes = [schemas]
+  }
+}
+
+# Token exchange app — runtime OAuth client New Relic uses for WIF token exchange
+resource "oci_identity_domains_app" "token_exchange_app" {
+  idcs_endpoint   = local.identity_domain_url
+  schemas         = ["urn:ietf:params:scim:schemas:oracle:idcs:App"]
+  display_name    = "${local.resource_prefix}-token-exchange-app-${local.suffix}"
+  active          = var.activate_oauth_apps
+  allowed_grants  = ["client_credentials"]
+  is_oauth_client = true
+  client_type     = "confidential"
+  bypass_consent  = true
+  attribute_sets  = ["all"]
+
+  based_on_template {
+    value = "CustomWebAppTemplateId"
+  }
+
+  # OCI requires apps to be deactivated before they can be deleted.
+  # This provisioner runs before Terraform sends the DELETE request.
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<EOT
+      oci --no-retry --endpoint "${self.idcs_endpoint}" identity-domains app patch \
+        --app-id "${self.id}" \
+        --schemas '["urn:ietf:params:scim:api:messages:2.0:PatchOp"]' \
+        --operations '[{"op":"replace","path":"active","value":false}]' \
+        2>&1 || true
+      sleep 5
+    EOT
+  }
+
+  lifecycle {
+    ignore_changes = [schemas]
+  }
+}
+
+# Grant Identity Domain Administrator role to admin app
+resource "oci_identity_domains_grant" "admin_app_domain_admin_grant" {
+  idcs_endpoint   = local.identity_domain_url
+  schemas         = ["urn:ietf:params:scim:schemas:oracle:idcs:Grant"]
+  grant_mechanism = "ADMINISTRATOR_TO_APP"
+  attribute_sets  = ["all"]
+
+  grantee {
+    value = oci_identity_domains_app.admin_app.id
+    type  = "App"
+  }
+
+  entitlement {
+    attribute_name  = "appRoles"
+    attribute_value = data.oci_identity_domains_app_roles.app_roles.app_roles[0].id
+  }
+
+  app {
+    value = "IDCSAppId"
+  }
+}
+
+locals {
+  # trust_body_upst references svc_user[0].id. Guard with try() so Terraform doesn't
+  # error when trust_type = RPST and svc_user count = 0. local.trust_body then selects
+  # only the branch that matches trust_type, so the guarded value is never actually used.
+  svc_user_id = try(oci_identity_domains_user.svc_user[0].id, "")
+
+  trust_body_upst = jsonencode({
+    active            = true
+    allowImpersonation = true
+    issuer            = local.newrelic_config.issuer_name
+    name              = var.trust_name
+    oauthClients      = [oci_identity_domains_app.token_exchange_app.name]
+    publicKeyEndpoint = local.newrelic_config.public_jwks_url
+    impersonationServiceUsers = [{
+      rule  = "sub eq '${local.newrelic_config.subject_name}'"
+      value = local.svc_user_id
+    }]
+    subjectType = "User"
+    type        = "JWT"
+    schemas     = ["urn:ietf:params:scim:schemas:oracle:idcs:IdentityPropagationTrust"]
+  })
+
+  trust_body_rpst = jsonencode({
+    active                = true
+    allowImpersonation    = true
+    issuer                = local.newrelic_config.rpst_issuer_name
+    name                  = "${var.trust_name}-rpst"
+    oauthClients          = [oci_identity_domains_app.token_exchange_app.name]
+    publicKeyEndpoint     = local.newrelic_config.public_jwks_url
+    impersonatingResource = local.impersonating_resource
+    claimPropagations     = ["ext_account_id", "ext_tenancy_id", "ext_resource_tag"]
+    subjectType           = "Resource"
+    type                  = "JWT"
+    schemas               = ["urn:ietf:params:scim:schemas:oracle:idcs:IdentityPropagationTrust"]
+  })
+
+  trust_body = local.is_upst ? local.trust_body_upst : local.trust_body_rpst
+}
+
+# Fetch IDA OAuth token and create the Identity Propagation Trust in one step.
+# All values needed for both create and destroy are captured in triggers at apply
+# time (when they are confirmed available). Triggers survive ORM's post-apply
+# refresh and are accessible in destroy provisioners via self.triggers.*.
+resource "null_resource" "trust_setup" {
+  triggers = {
+    client_secret           = oci_identity_domains_app.token_exchange_app.client_secret
+    token_exchange_client_id = oci_identity_domains_app.token_exchange_app.name
+    admin_app_name          = oci_identity_domains_app.admin_app.name
+    admin_app_secret        = oci_identity_domains_app.admin_app.client_secret
+    issuer                  = local.is_upst ? local.newrelic_config.issuer_name : local.newrelic_config.rpst_issuer_name
+    identity_domain_url     = local.identity_domain_url
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<EOT
+      OAUTH_TOKEN=$(printf '%s:%s' '${self.triggers.admin_app_name}' '${self.triggers.admin_app_secret}' | base64 | tr -d '\n')
+      TOKEN_RESPONSE=$(curl --silent --location '${self.triggers.identity_domain_url}/oauth2/v1/token' \
+        --header 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8' \
+        --header "Authorization: Basic $OAUTH_TOKEN" \
+        --data 'grant_type=client_credentials&scope=urn:opc:idm:__myscopes__')
+      ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token // empty')
+      if [ -z "$ACCESS_TOKEN" ] || [ "$ACCESS_TOKEN" = "null" ]; then
+        echo "Warning: could not get token to delete trust. Manual cleanup may be needed."
+        exit 0
+      fi
+
+      ISSUER='${self.triggers.issuer}'
+      EXISTING=$(curl --silent \
+        '${self.triggers.identity_domain_url}/admin/v1/IdentityPropagationTrusts?filter=issuer+eq+%22'"$ISSUER"'%22' \
+        --header "Authorization: Bearer $ACCESS_TOKEN")
+      TRUST_ID=$(echo "$EXISTING" | jq -r '.Resources[0].id // empty')
+
+      if [ -n "$TRUST_ID" ] && [ "$TRUST_ID" != "null" ]; then
+        # Only delete if this stack owns the trust — verified by checking that our
+        # token exchange app's client ID is in the trust's oauthClients list.
+        # If the apply failed before creating the trust (trust was pre-existing),
+        # our client ID won't be there and we skip deletion to avoid breaking
+        # an unrelated integration.
+        TOKEN_EXCHANGE_ID='${self.triggers.token_exchange_client_id}'
+        OWNED=$(echo "$EXISTING" | jq -r --arg id "$TOKEN_EXCHANGE_ID" \
+          '.Resources[0].oauthClients // [] | map(if type == "object" then .value else . end) | map(select(. == $id)) | length > 0')
+
+        if [ "$OWNED" = "true" ]; then
+          curl --silent --request DELETE \
+            '${self.triggers.identity_domain_url}/admin/v1/IdentityPropagationTrusts/'"$TRUST_ID" \
+            --header "Authorization: Bearer $ACCESS_TOKEN"
+          echo "Trust deleted: $TRUST_ID"
+        else
+          echo "Trust found but not owned by this stack (oauthClients does not contain this stack's token exchange app). Skipping deletion."
+        fi
+      else
+        echo "No trust found for issuer $ISSUER, nothing to delete."
+      fi
+    EOT
+  }
+  provisioner "local-exec" {
+    command = <<EOT
+      sleep 20
+      OAUTH_TOKEN=$(printf '%s:%s' '${oci_identity_domains_app.admin_app.name}' '${oci_identity_domains_app.admin_app.client_secret}' | base64 | tr -d '\n')
+      TOKEN_RESPONSE=$(curl --silent --location '${local.identity_domain_url}/oauth2/v1/token' \
+        --header 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8' \
+        --header "Authorization: Basic $OAUTH_TOKEN" \
+        --data 'grant_type=client_credentials&scope=urn:opc:idm:__myscopes__')
+
+      ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token // empty')
+      if [ -z "$ACCESS_TOKEN" ] || [ "$ACCESS_TOKEN" = "null" ]; then
+        echo "Token fetch failed: $(echo "$TOKEN_RESPONSE" | jq -r '.error_description // .error // "Unknown"')" >&2
+        exit 1
+      fi
+
+      sleep 10
+      TRUST_RESPONSE=$(curl --silent --location '${local.identity_domain_url}/admin/v1/IdentityPropagationTrusts' \
+        --header 'Content-Type: application/json' \
+        --header "Authorization: Bearer $ACCESS_TOKEN" \
+        --data '${local.trust_body}')
+
+      TRUST_ID=$(echo "$TRUST_RESPONSE" | jq -r '.id // empty')
+      if [ -n "$TRUST_ID" ] && [ "$TRUST_ID" != "null" ]; then
+        echo "Trust created: $TRUST_ID"
+      else
+        ERROR_MESSAGE=$(echo "$TRUST_RESPONSE" | jq -r '.detail // .error // "Unknown"')
+        if echo "$ERROR_MESSAGE" | grep -qi "same issuer already exists"; then
+          echo "ERROR: A Workload Identity Federation trust already exists for this tenancy." >&2
+          echo "" >&2
+          echo "If you have an existing WIF setup that is actively used, do not deploy this" >&2
+          echo "stack — select 'WIF already configured' in the New Relic UI instead." >&2
+          echo "" >&2
+          echo "If you want to replace it (e.g. after destroying a previous stack run), delete" >&2
+          echo "the existing trust first: OCI Console → Identity Domains → ${var.identity_domain_name}" >&2
+          echo "→ Security → Identity Propagation Trusts, then re-apply this stack." >&2
+          exit 1
+        else
+          echo "Trust creation failed: $ERROR_MESSAGE" >&2
+          exit 1
+        fi
+      fi
+
+    EOT
+  }
+
+  depends_on = [oci_identity_domains_grant.admin_app_domain_admin_grant]
+}
+
