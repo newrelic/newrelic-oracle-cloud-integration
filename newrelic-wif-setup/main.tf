@@ -1,13 +1,3 @@
-# Stable random suffix for the service user name. Generated once at stack
-# creation and stored in state. Avoids 409 conflicts when OCI soft-deletes
-# the user from a previous stack run and hasn't fully purged it yet.
-# Unlike timestamp(), this value is stable across re-applies.
-resource "random_string" "svc_user_suffix" {
-  length  = 4
-  upper   = false
-  special = false
-}
-
 # IAM Group for service user (UPST only)
 resource "oci_identity_domains_group" "newrelic_service_group" {
   count = local.is_upst ? 1 : 0
@@ -28,7 +18,7 @@ resource "oci_identity_domains_user" "svc_user" {
 
   idcs_endpoint = local.identity_domain_url
   schemas       = ["urn:ietf:params:scim:schemas:core:2.0:User"]
-  user_name     = "${local.resource_prefix}-wif-svc-user-${local.suffix}-${random_string.svc_user_suffix.result}"
+  user_name     = "${local.resource_prefix}-wif-svc-user-${local.suffix}"
 
   urnietfparamsscimschemasoracleidcsextensionuser_user {
     service_user = true

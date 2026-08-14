@@ -13,10 +13,6 @@ variable "region" {
   description = "OCI region. Do not modify — auto-populated by ORM."
 }
 
-variable "compartment_ocid" {
-  type        = string
-  description = "Auto-populated by ORM. Not used directly — all WIF IAM resources are created at tenancy root."
-}
 
 variable "identity_domain_name" {
   type        = string

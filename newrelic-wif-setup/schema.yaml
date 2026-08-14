@@ -40,14 +40,7 @@ variables:
     required: true
     visible: false
 
-  compartment_ocid:
-    type: string
-    title: Compartment OCID
-    description: "Auto-populated by ORM. Do not modify."
-    required: true
-    visible: false
-
-  identity_domain_name:
+identity_domain_name:
     type: string
     title: Identity Domain Name
     description: "Name of your OCI Identity Domain. Usually 'Default' unless you have custom domains."
