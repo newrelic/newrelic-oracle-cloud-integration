@@ -40,7 +40,7 @@ variables:
     required: true
     visible: false
 
-identity_domain_name:
+  identity_domain_name:
     type: string
     title: Identity Domain Name
     description: "Name of your OCI Identity Domain. Usually 'Default' unless you have custom domains."
