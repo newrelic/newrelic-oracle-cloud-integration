@@ -205,11 +205,12 @@ locals {
 # refresh and are accessible in destroy provisioners via self.triggers.*.
 resource "null_resource" "trust_setup" {
   triggers = {
-    client_secret       = oci_identity_domains_app.token_exchange_app.client_secret
-    admin_app_name      = oci_identity_domains_app.admin_app.name
-    admin_app_secret    = oci_identity_domains_app.admin_app.client_secret
-    issuer              = local.is_upst ? local.newrelic_config.issuer_name : local.newrelic_config.rpst_issuer_name
-    identity_domain_url = local.identity_domain_url
+    client_secret           = oci_identity_domains_app.token_exchange_app.client_secret
+    token_exchange_client_id = oci_identity_domains_app.token_exchange_app.name
+    admin_app_name          = oci_identity_domains_app.admin_app.name
+    admin_app_secret        = oci_identity_domains_app.admin_app.client_secret
+    issuer                  = local.is_upst ? local.newrelic_config.issuer_name : local.newrelic_config.rpst_issuer_name
+    identity_domain_url     = local.identity_domain_url
   }
 
   provisioner "local-exec" {
@@ -233,10 +234,23 @@ resource "null_resource" "trust_setup" {
       TRUST_ID=$(echo "$EXISTING" | jq -r '.Resources[0].id // empty')
 
       if [ -n "$TRUST_ID" ] && [ "$TRUST_ID" != "null" ]; then
-        curl --silent --request DELETE \
-          '${self.triggers.identity_domain_url}/admin/v1/IdentityPropagationTrusts/'"$TRUST_ID" \
-          --header "Authorization: Bearer $ACCESS_TOKEN"
-        echo "Trust deleted: $TRUST_ID"
+        # Only delete if this stack owns the trust — verified by checking that our
+        # token exchange app's client ID is in the trust's oauthClients list.
+        # If the apply failed before creating the trust (trust was pre-existing),
+        # our client ID won't be there and we skip deletion to avoid breaking
+        # an unrelated integration.
+        TOKEN_EXCHANGE_ID='${self.triggers.token_exchange_client_id}'
+        OWNED=$(echo "$EXISTING" | jq -r --arg id "$TOKEN_EXCHANGE_ID" \
+          '.Resources[0].oauthClients // [] | map(if type == "object" then .value else . end) | map(select(. == $id)) | length > 0')
+
+        if [ "$OWNED" = "true" ]; then
+          curl --silent --request DELETE \
+            '${self.triggers.identity_domain_url}/admin/v1/IdentityPropagationTrusts/'"$TRUST_ID" \
+            --header "Authorization: Bearer $ACCESS_TOKEN"
+          echo "Trust deleted: $TRUST_ID"
+        else
+          echo "Trust found but not owned by this stack (oauthClients does not contain this stack's token exchange app). Skipping deletion."
+        fi
       else
         echo "No trust found for issuer $ISSUER, nothing to delete."
       fi
