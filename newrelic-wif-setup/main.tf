@@ -180,6 +180,8 @@ locals {
     subjectType = "User"
     type        = "JWT"
     schemas     = ["urn:ietf:params:scim:schemas:oracle:idcs:IdentityPropagationTrust"]
+    clientClaimName   = "aud"
+    clientClaimValues = [local.identity_domain_url]
   })
 
   trust_body_rpst = jsonencode({
@@ -194,6 +196,8 @@ locals {
     subjectType           = "Resource"
     type                  = "JWT"
     schemas               = ["urn:ietf:params:scim:schemas:oracle:idcs:IdentityPropagationTrust"]
+    clientClaimName       = "aud"
+    clientClaimValues     = [local.identity_domain_url]
   })
 
   trust_body = local.is_upst ? local.trust_body_upst : local.trust_body_rpst
