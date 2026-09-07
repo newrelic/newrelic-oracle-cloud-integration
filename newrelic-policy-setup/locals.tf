@@ -18,6 +18,8 @@ locals {
   instrumentation_type             = local.newRelic_Metrics_Access_Policy && local.newRelic_Logs_Access_Policy && local.newRelic_Core_Integration_Policy ? "METRICS,LOGS" : (local.newRelic_Logs_Access_Policy && local.newRelic_Core_Integration_Policy) || local.newRelic_Logs_Access_Policy ? "LOGS" : (local.newRelic_Metrics_Access_Policy && local.newRelic_Core_Integration_Policy) || local.newRelic_Metrics_Access_Policy ? "METRICS" : ""
   linked_account_id                = var.linked_account_id != null ? var.linked_account_id : ""
   random_id                        = substr(md5(timestamp()), 0, 4)
+  ingest_key_secret_ocid           = local.newRelic_Core_Integration_Policy && var.create_vault ? oci_vault_secret.ingest_api_key[0].id : var.ingest_key_secret_ocid
+  user_key_secret_ocid             = local.newRelic_Core_Integration_Policy && var.create_vault ? oci_vault_secret.user_api_key[0].id : var.user_key_secret_ocid
   user_api_key = var.create_vault ? var.newrelic_user_api_key : (
     var.user_key_secret_ocid != "" ? base64decode(data.oci_secrets_secretbundle.user_api_key[0].secret_bundle_content[0].content) : var.newrelic_user_api_key
   )
