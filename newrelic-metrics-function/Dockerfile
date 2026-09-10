@@ -12,6 +12,7 @@ ADD . /function/
 RUN rm -fr /function/.pip_cache
 FROM fnproject/python:3.11
 WORKDIR /function
+RUN microdnf update -y tar && microdnf clean all
 COPY --from=build-stage /python /python
 COPY --from=build-stage /function /function
 RUN chmod -R o+r /function
