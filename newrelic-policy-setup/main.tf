@@ -123,6 +123,25 @@ resource "oci_identity_policy" "nr_logs_policy" {
   freeform_tags = local.freeform_tags
 }
 
+# Cross-tenancy endorsement so WIF-authenticated principals (UPST service user or RPST
+# federated app) can read Oracle's shared FOCUS cost-report bucket in the reporting tenancy.
+# No principal-type condition — both UPST (request.principal.type=user) and RPST
+# (request.principal.type=identityfederateddomainapp) must be able to cross the boundary.
+# The ALLOW statement in the customer's tenancy (created during WIF setup) already gates
+# which specific principals can act; this ENDORSE just permits crossing the tenancy.
+resource "oci_identity_policy" "nr_cost_policy" {
+  count          = local.is_home_region && local.newRelic_Cost_Access_Policy ? 1 : 0
+  compartment_id = var.tenancy_ocid
+  description    = "[DO NOT REMOVE] Policy to endorse New Relic principals to read OCI FOCUS cost reports from the shared Oracle reporting tenancy"
+  name           = local.newrelic_cost_policy
+  statements = [
+    "DEFINE tenancy usage-report as ocid1.tenancy.oc1..aaaaaaaaned4fkpkisbwjlr56u7cj63lf3wffbilvqknstgtvzub7vhqkggq",
+    "endorse any-user to read objects in tenancy usage-report",
+  ]
+  defined_tags  = {}
+  freeform_tags = local.freeform_tags
+}
+
 #Resource for the metrics/Logging (Common) policies
 resource "oci_identity_policy" "nr_common_policy" {
   count          = local.is_home_region && local.newRelic_Core_Integration_Policy ? 1 : 0
