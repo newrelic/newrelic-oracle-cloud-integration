@@ -11,6 +11,9 @@ on:
     paths:
       - 'newrelic-metrics-function/**'
 
+permissions:
+  contents: read
+
 jobs:
   # Job 1: Build Docker Image on PR Raise
   build_docker_image:
