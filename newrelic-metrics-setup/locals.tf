@@ -26,6 +26,17 @@ locals {
   providerAccountId      = data.external.connector_hubs.result.provider_account_id
   user_api_key           = base64decode(data.oci_secrets_secretbundle.user_api_key.secret_bundle_content[0].content)
   stack_id               = data.oci_resourcemanager_stacks.current_stack.stacks[0].id
+
+  # The function runs from a copy of var.function_image in the tenancy's own Container Registry.
+  ocir_host                 = "${var.region}.ocir.io"
+  ocir_namespace            = oci_artifacts_container_repository.metrics_function_repo.namespace
+  function_image_repository = "newrelic-${lower(var.nr_prefix)}/oci-metrics-forwarder"
+  function_image_digest     = data.external.function_image.result.digest
+  function_image            = "${local.ocir_host}/${local.ocir_namespace}/${local.function_image_repository}:${data.external.function_image.result.tag}"
+  create_registry_token     = nonsensitive(var.registry_auth_token == "")
+  registry_username         = "${local.ocir_namespace}/${var.registry_username != "" ? var.registry_username : data.oci_identity_user.registry_user[0].name}"
+  # Unmarked so Terraform keeps showing the copy's log output; image_mirror.py never prints it.
+  registry_password = local.create_registry_token ? oci_identity_auth_token.registry_push[0].token : nonsensitive(var.registry_auth_token)
   newrelic_graphql_endpoint = {
     US = "https://api.newrelic.com/graphql"
     EU = "https://api.eu.newrelic.com/graphql"

@@ -49,3 +49,28 @@ variable "payload_link" {
   type        = string
   description = "The link to the payload for the connector hubs."
 }
+
+variable "function_image" {
+  type        = string
+  default     = "docker.io/newrelic/oci-metrics-forwarder:latest"
+  description = "Public image for the metrics function. The stack copies it into a private Container Registry repository in your tenancy and runs the function from there. Re-applying the stack picks up a new image pushed under the same tag."
+}
+
+variable "current_user_ocid" {
+  type        = string
+  default     = ""
+  description = "OCID of the user running the stack. Populated by Resource Manager; used to create the auth token that pushes the function image to Container Registry."
+}
+
+variable "registry_username" {
+  type        = string
+  default     = ""
+  description = "Container Registry username, without the tenancy namespace. Leave empty to use the user running the stack. Set it for users in a non-default identity domain (<domain_name>/<username>)."
+}
+
+variable "registry_auth_token" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "Existing auth token for pushing to Container Registry. Leave empty to have the stack create one for the user running it (OCI allows two auth tokens per user)."
+}
