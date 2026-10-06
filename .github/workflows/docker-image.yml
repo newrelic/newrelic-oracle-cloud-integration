@@ -1,6 +1,7 @@
 name: Build and Deploy OCI Image
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -10,6 +11,7 @@ on:
     types: [opened, synchronize, reopened]
     paths:
       - 'newrelic-metrics-function/**'
+      - '.github/workflows/docker-image.yml'
 
 permissions:
   contents: read
@@ -111,3 +113,40 @@ jobs:
           OCI_TENANCY_NAMESPACE: ${{ secrets.OCI_TENANCY_NAMESPACE }}
           OCI_USERNAME: ${{ secrets.OCI_USERNAME }}
           FUNCTION_BUILD_VERSION: ${{ env.FUNCTION_BUILD_VERSION }}
+
+  # Job 3: Build the image and publish it as a downloadable workflow artifact.
+  # No `environment:` gate, so this is not blocked awaiting approval. build-only
+  # mode exits before the login/tag/push phase, so no real OCIR credentials are
+  # needed -- build_and_push.sh only validates that the three vars are non-empty.
+  export_image_artifact:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: oci-metrics-forwarder
+      IMAGE_TAG: build-${{ github.run_number }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set permissions for build script
+        run: chmod +x script/build_and_push.sh
+
+      - name: Build Docker image (build-only)
+        run: ./script/build_and_push.sh build-only
+        env:
+          FUNCTION_BUILD_VERSION: ${{ github.run_number }}
+          # Unused in build-only mode; present only to satisfy the script's
+          # up-front non-empty validation, which runs before the build.
+          ORACLE_AUTH_TOKEN: unused
+          OCI_TENANCY_NAMESPACE: unused
+          OCI_USERNAME: unused
+
+      - name: Save image to tarball
+        run: docker save "$IMAGE_NAME:$IMAGE_TAG" | gzip > oci-metrics-forwarder.tar.gz
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: oci-metrics-forwarder-${{ github.run_number }}
+          path: oci-metrics-forwarder.tar.gz
+          retention-days: 7
+          compression-level: 0
