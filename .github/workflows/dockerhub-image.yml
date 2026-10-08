@@ -1,0 +1,69 @@
+name: Build and Publish Image to Docker Hub
+
+# Publishes the metrics forwarder image to Docker Hub. The metrics stack copies this image from
+# Docker Hub into a private Container Registry repository in the customer's tenancy.
+#
+# Pull requests build the image only; pushes to main build and publish.
+# Requires DOCKERHUB_USERNAME and DOCKERHUB_TOKEN in the production-environment secrets.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'newrelic-metrics-function/**'
+      - '.github/workflows/dockerhub-image.yml'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'newrelic-metrics-function/**'
+      - '.github/workflows/dockerhub-image.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build_and_publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: production-environment
+    env:
+      IMAGE: newrelic/beyond-oci-metric-function
+    steps:
+      # Keeps Docker Hub tags aligned with the OCIR tags cut by docker-image.yml.
+      - name: Set FUNCTION_BUILD_VERSION
+        run: |
+          major=1
+          minor=$((1 + ${{ github.run_number }}))
+          echo "FUNCTION_BUILD_VERSION=${major}.${minor}" >> $GITHUB_ENV
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push ${{ env.IMAGE }}
+        uses: docker/build-push-action@v6
+        with:
+          # Same context as script/build_and_push.sh, so Docker Hub and OCIR get the same image.
+          context: newrelic-metrics-function
+          file: newrelic-metrics-function/Dockerfile
+          # OCI Functions GENERIC_X86 shape runs linux/amd64 only.
+          platforms: linux/amd64
+          # Publish a plain image manifest (no attestation index) so a tag resolves to a single
+          # image digest for consumers that read it with one HEAD request.
+          provenance: false
+          sbom: false
+          build-args: FUNCTION_BUILD_VERSION=${{ env.FUNCTION_BUILD_VERSION }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ env.FUNCTION_BUILD_VERSION }}
