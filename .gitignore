@@ -1,0 +1,2 @@
+# Trivy scan output produced by script/trivy_scan.sh
+trivy-results.sarif
