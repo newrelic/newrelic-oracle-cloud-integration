@@ -54,7 +54,7 @@ After the policy stack is successfully created,the Metrics stack will be created
 * A VCN that routes traffic to New Relic (alternatively, use an existing VCN)
 * Application that contains a function
 * Function Application that contains the `metrics-function` to forward metrics.
-* A private Container Registry repository in your tenancy. The stack copies the function image (`function_image`, by default `docker.io/newrelic/oci-metrics-forwarder:latest`) into it, and the function runs from that copy.
+* A private Container Registry repository in your tenancy. The stack copies the function image (`function_image`, by default `docker.io/newrelic/beyond-oci-metric-function:latest`) into it, and the function runs from that copy.
 * Service Connector that routes metrics to the Function Application
 
 To push the image, the stack creates an auth token for the user running it. OCI allows two auth tokens per user, so if that user already has two, either delete one or enter an existing token in **Container Registry auth token**. Users in a non-default identity domain also need to set **Container Registry username** to `<domain_name>/<username>`.

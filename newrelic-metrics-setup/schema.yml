@@ -118,7 +118,7 @@ variables:
     title: Function image
     description: Public image for the metrics function. The stack copies it into a private Container Registry repository in this tenancy. Re-apply the stack to pick up a new image pushed under the same tag.
     required: true
-    default: docker.io/newrelic/oci-metrics-forwarder:latest
+    default: docker.io/newrelic/beyond-oci-metric-function:latest
 
   registry_username:
     type: string

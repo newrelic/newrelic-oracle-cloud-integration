@@ -52,7 +52,7 @@ variable "payload_link" {
 
 variable "function_image" {
   type        = string
-  default     = "docker.io/newrelic/oci-metrics-forwarder:latest"
+  default     = "docker.io/newrelic/beyond-oci-metric-function:latest"
   description = "Public image for the metrics function. The stack copies it into a private Container Registry repository in your tenancy and runs the function from there. Re-applying the stack picks up a new image pushed under the same tag."
 }
 

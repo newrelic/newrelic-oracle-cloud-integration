@@ -116,7 +116,8 @@ jobs:
 
   # Job 3: Build the image and publish it as a downloadable workflow artifact.
   # No `environment:` gate, so this is not blocked awaiting approval. build-only
-  # mode exits before the login/tag/push phase, so no OCIR credentials are needed.
+  # mode exits before the login/tag/push phase, so no real OCIR credentials are
+  # needed -- build_and_push.sh only validates that the three vars are non-empty.
   export_image_artifact:
     runs-on: ubuntu-latest
     env:
@@ -133,6 +134,11 @@ jobs:
         run: ./script/build_and_push.sh build-only
         env:
           FUNCTION_BUILD_VERSION: ${{ github.run_number }}
+          # Unused in build-only mode; present only to satisfy the script's
+          # up-front non-empty validation, which runs before the build.
+          ORACLE_AUTH_TOKEN: unused
+          OCI_TENANCY_NAMESPACE: unused
+          OCI_USERNAME: unused
 
       - name: Save image to tarball
         run: docker save "$IMAGE_NAME:$IMAGE_TAG" | gzip > oci-metrics-forwarder.tar.gz
@@ -144,31 +150,3 @@ jobs:
           path: oci-metrics-forwarder.tar.gz
           retention-days: 7
           compression-level: 0
-
-  # Job 4: Push the image customer stacks copy into their own Container Registry
-  push_dockerhub_image:
-    runs-on: ubuntu-latest
-    needs: build_docker_image
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    environment:
-      name: production-environment
-    steps:
-      - name: Set FUNCTION_BUILD_VERSION
-        run: |
-          major=1
-          minor=$((1 + ${{ github.run_number }}))
-          echo "FUNCTION_BUILD_VERSION=${major}.${minor}" >> $GITHUB_ENV
-
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set permissions for build script
-        run: chmod +x script/build_and_push.sh
-
-      - name: Push Docker Image to Docker Hub
-        run: ./script/build_and_push.sh dockerhub
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          DOCKERHUB_REPOSITORY: newrelic/oci-metrics-forwarder
-          FUNCTION_BUILD_VERSION: ${{ env.FUNCTION_BUILD_VERSION }}
