@@ -69,6 +69,11 @@ The stack copies the image into the repository over the Container Registry API, 
 | **Container Registry auth token** | The stack creates an auth token for the user running it, keeps it for later upgrades, and deletes it when the stack is destroyed | That user already has two auth tokens (the OCI maximum), your organization doesn't allow creating tokens, or pushes should use a dedicated user |
 | **Container Registry username** | Uses the user running the stack | The token above belongs to a different user (enter that user's name), or the user is in a non-default identity domain (enter `<identity_domain_name>/<username>`) |
 
+To find the values for these fields in the OCI Console:
+
+* **Username:** open the **Profile** menu (top right) and select **User settings** (or **My profile**); the username is shown at the top. Enter it without the tenancy namespace. For a federated user it has the form `oracleidentitycloudservice/<username>`, and for a user in a non-default identity domain, `<identity_domain_name>/<username>`.
+* **Auth token:** on the same page, open **Tokens and keys**, go to **Auth tokens**, and select **Generate token**. Copy the token right away; the Console shows it only once. See [Getting an auth token](https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrygettingauthtoken.htm).
+
 The user running the stack needs permission to manage repositories in the New Relic compartment. When the stack creates the token, that user also needs the **Auth tokens** capability, which is enabled for users by default. A new auth token can take a few minutes to become active; the stack retries during that time, so the job log may show `rejected the credentials … retrying` before the copy starts.
 
 To upgrade the function, apply the stack again. If the tag in **Function image** points at a new image, the stack copies it and updates the function in place; otherwise nothing changes. Upgrades are per region, so apply the stack in every region.

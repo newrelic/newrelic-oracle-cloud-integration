@@ -123,13 +123,13 @@ variables:
   registry_username:
     type: string
     title: Container Registry username
-    description: Optional. Leave empty to use the user running this stack. Otherwise enter the username, without the tenancy namespace, of the user that owns the auth token below; for a user in a non-default identity domain, enter <identity_domain_name>/<username>.
+    description: Optional. Leave empty to use the user running this stack. Otherwise enter the username of the user that owns the auth token below, without the tenancy namespace. Find it at Profile menu > User settings (or My profile). For a federated user it has the form oracleidentitycloudservice/<username>, and for a user in a non-default identity domain, <identity_domain_name>/<username>.
     required: false
 
   registry_auth_token:
     type: password
     title: Container Registry auth token
-    description: Optional. Leave empty to have the stack create an auth token for the user running it; the stack keeps it for later upgrades and deletes it when the stack is destroyed. Enter an existing auth token if that user already has two (the OCI maximum), your organization doesn't allow creating tokens, or pushes should use a dedicated user (then also set Container Registry username).
+    description: Optional. Leave empty to have the stack create an auth token for the user running it; the stack keeps it for later upgrades and deletes it when the stack is destroyed. Enter a token if that user already has two (the OCI maximum), your organization doesn't allow creating tokens, or pushes should use a dedicated user (then also set Container Registry username). To create one, go to Profile menu > User settings (or My profile) > Tokens and keys > Auth tokens > Generate token, and copy it right away; it is shown only once.
     required: false
 
   current_user_ocid:
