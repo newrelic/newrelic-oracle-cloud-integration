@@ -116,20 +116,20 @@ variables:
   function_image:
     type: string
     title: Function image
-    description: Public image for the metrics function. The stack copies it into a private Container Registry repository in this tenancy. Re-apply the stack to pick up a new image pushed under the same tag.
+    description: Public image the metrics function runs. The stack copies it into a private Container Registry repository in this region (newrelic-<prefix>/oci-metrics-forwarder), and the function runs from that copy. Keep the default unless New Relic asks you to change it. Re-applying the stack picks up a new image pushed under the same tag; use a version tag (for example :1.5) to choose when to upgrade.
     required: true
     default: docker.io/newrelic/beyond-oci-metric-function:latest
 
   registry_username:
     type: string
     title: Container Registry username
-    description: Optional. Username without the tenancy namespace; defaults to the user running the stack. Set <domain_name>/<username> for users in a non-default identity domain.
+    description: Optional. Leave empty to use the user running this stack. Otherwise enter the username, without the tenancy namespace, of the user that owns the auth token below; for a user in a non-default identity domain, enter <identity_domain_name>/<username>.
     required: false
 
   registry_auth_token:
     type: password
     title: Container Registry auth token
-    description: Optional. Existing auth token used to push the image. Leave empty to have the stack create one for the user running it (OCI allows at most two per user).
+    description: Optional. Leave empty to have the stack create an auth token for the user running it; the stack keeps it for later upgrades and deletes it when the stack is destroyed. Enter an existing auth token if that user already has two (the OCI maximum), your organization doesn't allow creating tokens, or pushes should use a dedicated user (then also set Container Registry username).
     required: false
 
   current_user_ocid:
