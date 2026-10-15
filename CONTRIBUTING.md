@@ -18,6 +18,34 @@ Before submitting an Issue, please search for similar ones in the
 2. Increase the version numbers in any examples files and the README.md to the new version that this Pull Request would represent. The versioning scheme we use is [SemVer](http://semver.org/).
 3. You may merge the Pull Request in once you have the sign-off of two other developers, or if you do not have permission to do that, you may request the second reviewer to merge it for you.
 
+## Security Scanning
+
+Every pull request, plus a nightly schedule, runs a Trivy vulnerability scan
+against the `newrelic-metrics-function` image
+(`.github/workflows/repo_level_scan.yml`). The build fails when Trivy finds a
+vulnerability that has a fix available.
+
+To reproduce that scan locally before opening a pull request:
+
+```bash
+brew install trivy          # or see https://trivy.dev/latest/getting-started/installation/
+./script/trivy_scan.sh
+```
+
+The script builds the image and runs the same three Trivy passes as CI, writing
+`trivy-results.sarif` for the fixable findings. It exits non-zero when CI would
+fail. Useful overrides:
+
+```bash
+SKIP_BUILD=1 ./script/trivy_scan.sh                   # rescan without rebuilding
+SEVERITY=CRITICAL,HIGH ./script/trivy_scan.sh         # narrow the report
+CA_CERT=/path/to/proxy-ca.pem ./script/trivy_scan.sh  # behind a TLS-inspecting proxy
+```
+
+`CA_CERT` is only needed on networks that intercept TLS, where the base image
+cannot otherwise reach `yum.oracle.com` or `pypi.org`. The certificate is added
+to a throwaway copy of the build context, never to the committed Dockerfile.
+
 ## Contributor License Agreement
 
 Keep in mind that when you submit your Pull Request, you'll need to sign the CLA via the click-through using CLA-Assistant. If you'd like to execute our corporate CLA, or if you have any questions, please drop us an email at opensource@newrelic.com.
