@@ -61,7 +61,7 @@ variable "linked_account_id" {
 
 variable "policy_stack" {
   type        = string
-  description = "A string indicating which parts of the stack to deploy. Use comma-separated values from METRICS, LOGS, COMMON."
+  description = "A string indicating which parts of the stack to deploy. Use comma-separated values from METRICS, LOGS, COMMON, COST."
 }
 
 variable "client_id" {
