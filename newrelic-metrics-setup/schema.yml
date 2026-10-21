@@ -123,13 +123,13 @@ variables:
   registry_username:
     type: string
     title: Container Registry username
-    description: Optional. Leave empty to use the user running this stack. Otherwise enter the username of the user that owns the auth token below, without the tenancy namespace. Find it at Profile menu > User settings (or My profile). For a federated user it has the form oracleidentitycloudservice/<username>, and for a user in a non-default identity domain, <identity_domain_name>/<username>.
+    description: Optional. Leave empty to use the user who last created or edited this stack. Required when you enter an auth token below; enter the token owner's username exactly as shown at Profile menu > User settings (or My profile), without the tenancy namespace. Add <identity_domain_name>/ in front only for a user outside the Default identity domain. Fill in both fields when more than one person manages this stack.
     required: false
 
   registry_auth_token:
     type: password
     title: Container Registry auth token
-    description: Optional. Leave empty to have the stack create an auth token for the user running it; the stack keeps it for later upgrades and deletes it when the stack is destroyed. Enter a token if that user already has two (the OCI maximum), your organization doesn't allow creating tokens, or pushes should use a dedicated user (then also set Container Registry username). To create one, go to Profile menu > User settings (or My profile) > Tokens and keys > Auth tokens > Generate token, and copy it right away; it is shown only once.
+    description: Optional. Leave empty to have the stack create an auth token for the user who last created or edited this stack; it is kept for later upgrades and deleted with the stack. Enter one, together with Container Registry username, if more than one person manages this stack, that user already has two auth tokens (the OCI maximum), or your organization doesn't allow creating tokens. The same token works in every region. Create it at Profile menu > User settings (or My profile) > Tokens and keys > Auth tokens > Generate token, and copy it right away; it is shown only once.
     required: false
 
   current_user_ocid:

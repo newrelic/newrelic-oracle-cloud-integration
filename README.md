@@ -66,15 +66,32 @@ The stack copies the image into the repository over the Container Registry API, 
 | Field | Default | Change it when |
 |---|---|---|
 | **Function image** | Uses `docker.io/newrelic/beyond-oci-metric-function:latest` | New Relic asks you to use a different image, or you want a version tag (for example `:1.5`) to choose when to upgrade |
-| **Container Registry auth token** | The stack creates an auth token for the user running it, keeps it for later upgrades, and deletes it when the stack is destroyed | That user already has two auth tokens (the OCI maximum), your organization doesn't allow creating tokens, or pushes should use a dedicated user |
-| **Container Registry username** | Uses the user running the stack | The token above belongs to a different user (enter that user's name), or the user is in a non-default identity domain (enter `<identity_domain_name>/<username>`) |
+| **Container Registry auth token** | The stack creates an auth token for the user who last created or edited the stack, keeps it for later upgrades, and deletes it when the stack is destroyed | See [When to enter your own auth token](#when-to-enter-your-own-auth-token) |
+| **Container Registry username** | Uses the user who last created or edited the stack | You enter an auth token: enter the username of the token's owner |
 
-To find the values for these fields in the OCI Console:
+###### When to enter your own auth token
 
-* **Username:** open the **Profile** menu (top right) and select **User settings** (or **My profile**); the username is shown at the top. Enter it without the tenancy namespace. For a federated user it has the form `oracleidentitycloudservice/<username>`, and for a user in a non-default identity domain, `<identity_domain_name>/<username>`.
+Fill in both **Container Registry auth token** and **Container Registry username** when any of these apply:
+
+* More than one person creates, edits, or applies the stack, or the person who created it might leave. A token the stack creates belongs to whoever last created or edited the stack, and later jobs need that user to still exist.
+* The stack's user already has two auth tokens, the OCI maximum. Each regional stack creates its own token, so one user can set up at most two regions this way.
+* Your organization doesn't allow creating auth tokens.
+
+Use a dedicated user if you can. The same token and username work in every region, so enter them in each regional stack. The username must belong to the token's owner. If the token is later deleted or replaced, enter the new one before the next upgrade.
+
+###### Finding the username and auth token
+
+* **Username:** open the **Profile** menu (top right) and select **User settings** (or **My profile**). Copy the username shown at the top exactly as it appears, without the tenancy namespace; for example `jane@example.com`, also for users who sign in with single sign-on. For a user outside the **Default** identity domain, enter `<identity_domain_name>/<username>`. Tenancies that still federate through Oracle Identity Cloud Service show usernames that start with `oracleidentitycloudservice/`; copy them including that prefix.
 * **Auth token:** on the same page, open **Tokens and keys**, go to **Auth tokens**, and select **Generate token**. Copy the token right away; the Console shows it only once. See [Getting an auth token](https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrygettingauthtoken.htm).
 
-The user running the stack needs permission to manage repositories in the New Relic compartment. When the stack creates the token, that user also needs the **Auth tokens** capability, which is enabled for users by default. A new auth token can take a few minutes to become active, and the stack retries during that time, so the copy step can show `Still creating...` for a few minutes on the first apply. The copy step's output is hidden because it uses the token; if the copy fails, the job log shows the full output in the error.
+###### Permissions and timing
+
+The user who applies the stack needs permission to manage repositories in the New Relic compartment. When the stack creates the token, the stack's user also needs the **Auth tokens** capability, which is enabled for users by default. A new auth token can take a few minutes to become active, and the stack retries during that time, so the copy step can show `Still creating...` for up to five minutes. The copy step's output is hidden because it uses the token; if the copy fails, the job log shows the full output in the error.
+
+###### Troubleshooting
+
+* **The copy fails with `rejected the username … and its auth token (401)`:** Container Registry doesn't accept that username and token. Check that the username belongs to the token's owner and is entered exactly as the Console shows it, without extra prefixes, and that the token still exists.
+* **A job fails reading `data.oci_identity_user.registry_user`:** the user who last created or edited the stack no longer exists or can't be read by the user running the job. Edit the stack as your own user, or fill in both registry fields.
 
 To upgrade the function, apply the stack again. If the tag in **Function image** points at a new image, the stack copies it and updates the function in place; otherwise nothing changes. Upgrades are per region, so apply the stack in every region.
 
