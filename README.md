@@ -86,7 +86,7 @@ Use a dedicated user if you can. The same token and username work in every regio
 
 ###### Permissions and timing
 
-The user who applies the stack needs permission to manage repositories in the New Relic compartment. When the stack creates the token, the stack's user also needs the **Auth tokens** capability, which is enabled for users by default. A new auth token can take a few minutes to become active, and the stack retries during that time, so the copy step can show `Still creating...` for up to five minutes. The copy step's output is hidden because it uses the token; if the copy fails, the job log shows the full output in the error.
+The user who applies the stack needs permission to manage repositories in the New Relic compartment. When the stack creates the token, the stack's user also needs the **Auth tokens** capability, which is enabled for users by default. A new auth token can take a few minutes to become active, and the stack retries during that time, so the copy step can show `Still creating...` for up to ten minutes. The copy step's output is hidden because it uses the token; if the copy fails, the job log shows the full output in the error.
 
 ###### Troubleshooting
 
