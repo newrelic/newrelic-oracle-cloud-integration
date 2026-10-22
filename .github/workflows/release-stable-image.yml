@@ -84,10 +84,18 @@ jobs:
       # re-uploaded, so :stable and the source tag share one digest. Sourced by digest
       # rather than by tag so that `latest` moving mid-run (a push to main lands between
       # the resolve above and this step) cannot ship an image nobody approved.
+      #
+      # --prefer-index=false makes this a carbon copy of the source manifest. Without it,
+      # imagetools create wraps even a single source in a new image index, which publishes
+      # :stable under the index's own digest instead of the source digest -- breaking both
+      # the verify step below and the single-HEAD-request resolution that dockerhub-image.yml
+      # keeps by building with provenance and sbom off.
       - name: Point stable at ${{ inputs.source_tag }}
         env:
           DIGEST: ${{ steps.source.outputs.digest }}
-        run: docker buildx imagetools create --tag "$IMAGE:stable" "$IMAGE@$DIGEST"
+        run: |
+          docker buildx imagetools create --prefer-index=false \
+            --tag "$IMAGE:stable" "$IMAGE@$DIGEST"
 
       - name: Verify stable resolves to the same digest
         env:
