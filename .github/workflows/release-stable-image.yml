@@ -1,0 +1,107 @@
+name: Release Stable Image
+
+# Moves the `stable` tag onto an image that is ALREADY published on Docker Hub by
+# dockerhub-image.yml. Nothing is built or rebuilt here: the version tag and `latest`
+# are minted by pushes to main, and this workflow only marks one of those existing
+# images as the stable release.
+#
+# Manual only -- workflow_dispatch is the single trigger, so cutting a stable release is
+# always an explicit act, never a side effect of a merge.
+#
+# Stable comes only from main: the preflight job rejects a dispatch from any other ref
+# before the release job (and its approval gate) is reached.
+#
+# Approval: the release job runs in the production-environment, so GitHub holds it at
+# "Waiting for review" until one of that environment's required reviewers approves. Any
+# single reviewer is enough. Required reviewers are configured in repo
+# Settings > Environments.
+#
+# Requires DOCKERHUB_USERNAME and DOCKERHUB_TOKEN in the production-environment secrets.
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_tag:
+        description: 'Published tag to promote: a version like 1.42, or latest.'
+        required: true
+        default: latest
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  # Ungated on purpose: a bad ref or a malformed tag fails here, before the release job
+  # asks a manager or lead to review a run that was never going to publish.
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require main
+        run: |
+          if [[ "${{ github.ref }}" != "refs/heads/main" ]]; then
+            echo "Error: :stable is cut from main only; this run was dispatched from '${{ github.ref }}'."
+            exit 1
+          fi
+
+      - name: Validate source tag input
+        env:
+          SOURCE_TAG: ${{ inputs.source_tag }}
+        run: |
+          if [[ ! "$SOURCE_TAG" =~ ^(latest|[0-9]+\.[0-9]+(\.[0-9]+)?)$ ]]; then
+            echo "Error: source_tag must be 'latest' or a published version tag like 1.42 or 1.42.0;"
+            echo "got '$SOURCE_TAG'."
+            exit 1
+          fi
+
+  promote_to_stable:
+    runs-on: ubuntu-latest
+    needs: preflight
+    environment:
+      name: production-environment
+    env:
+      IMAGE: newrelic/beyond-oci-metric-function
+      SOURCE_TAG: ${{ inputs.source_tag }}
+    steps:
+      # No checkout and no build step: this job touches registry metadata only.
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Resolve ${{ inputs.source_tag }} on Docker Hub
+        id: source
+        run: |
+          if ! digest=$(docker buildx imagetools inspect "$IMAGE:$SOURCE_TAG" --format '{{.Manifest.Digest}}'); then
+            echo "Error: $IMAGE:$SOURCE_TAG is not published. Promote a tag that the"
+            echo "Build and Publish Image to Docker Hub workflow has already pushed."
+            exit 1
+          fi
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "Promoting $IMAGE:$SOURCE_TAG ($digest)"
+
+      # Copies the existing manifest onto the stable tag; no layers are rebuilt or
+      # re-uploaded, so :stable and the source tag share one digest. Sourced by digest
+      # rather than by tag so that `latest` moving mid-run (a push to main lands between
+      # the resolve above and this step) cannot ship an image nobody approved.
+      - name: Point stable at ${{ inputs.source_tag }}
+        env:
+          DIGEST: ${{ steps.source.outputs.digest }}
+        run: docker buildx imagetools create --tag "$IMAGE:stable" "$IMAGE@$DIGEST"
+
+      - name: Verify stable resolves to the same digest
+        env:
+          EXPECTED: ${{ steps.source.outputs.digest }}
+        run: |
+          actual=$(docker buildx imagetools inspect "$IMAGE:stable" --format '{{.Manifest.Digest}}')
+          if [[ "$actual" != "$EXPECTED" ]]; then
+            echo "Error: $IMAGE:stable resolved to $actual, expected $EXPECTED."
+            exit 1
+          fi
+          {
+            echo "### Stable release published"
+            echo ""
+            echo "- Image: \`$IMAGE\`"
+            echo "- \`stable\` cut from \`$SOURCE_TAG\`"
+            echo "- Digest: \`$actual\`"
+          } >> "$GITHUB_STEP_SUMMARY"
