@@ -24,6 +24,17 @@ if [ ! -d "$WIF_DIR" ]; then
   exit 1
 fi
 
+# Pinned function image for this release: written into the metrics stack and published as an asset.
+# A release that cannot name its image is a release that silently floats, so fail instead.
+if ! echo "${FUNCTION_IMAGE:-}" | grep -Eq '^docker\.io/newrelic/beyond-oci-metric-function:[0-9.]+@sha256:[0-9a-f]{64}$'; then
+  echo "Error: FUNCTION_IMAGE is not a pinned image reference: '${FUNCTION_IMAGE:-}'"
+  exit 1
+fi
+
+LOCK_FILE="function_image.lock"
+echo "$FUNCTION_IMAGE" > "$METRICS_DIR/$LOCK_FILE"
+cp "$METRICS_DIR/$LOCK_FILE" "$LOCK_FILE"
+
 # Create the zip files
 echo "Creating metrics zip file: $METRICS_ZIP"
 zip -r "$METRICS_ZIP" "$METRICS_DIR"
@@ -65,7 +76,9 @@ git push origin "$next_tag"
 release_heading="newrelic-oci - ${next_tag}"
 release_notes="Features
 
-${latest_commit_message}"
-gh release create "$next_tag" "$METRICS_ZIP" "$POLICY_ZIP" "$WIF_ZIP" --title "$release_heading" --notes "$release_notes"
+${latest_commit_message}
+
+Function image: \`${FUNCTION_IMAGE}\`"
+gh release create "$next_tag" "$METRICS_ZIP" "$POLICY_ZIP" "$WIF_ZIP" "$LOCK_FILE" --title "$release_heading" --notes "$release_notes"
 
 echo "Release created successfully with tag: $next_tag"

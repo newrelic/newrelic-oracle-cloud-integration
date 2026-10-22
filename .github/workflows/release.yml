@@ -1,32 +1,104 @@
-name: Create Release Zip
+name: Release
+
+# Publishes the function image to Docker Hub when it changed, then cuts the stack release with that
+# image pinned by digest. When the function did not change, the pin carries over from the previous release.
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch: # always rebuilds and publishes the image
 
 permissions:
   contents: write
 
 jobs:
-  release:
+  image:
     runs-on: ubuntu-latest
     environment:
       name: production-environment
-
+    env:
+      IMAGE: newrelic/beyond-oci-metric-function
+    outputs:
+      ref: ${{ steps.pin.outputs.ref }}
     steps:
-      # Checkout the repository
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
 
-      # Ensure required tools are installed
+      # Any diff error (manual run, unknown base) counts as a change, so the image gets rebuilt.
+      - name: Check whether the function changed
+        id: changes
+        run: |
+          if git diff --quiet "${{ github.event.before }}" "${{ github.sha }}" -- newrelic-metrics-function 2>/dev/null; then
+            echo "function=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "function=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set FUNCTION_BUILD_VERSION
+        if: steps.changes.outputs.function == 'true'
+        run: echo "FUNCTION_BUILD_VERSION=1.$((1 + ${{ github.run_number }}))" >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        if: steps.changes.outputs.function == 'true'
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Log in to Docker Hub
+        if: steps.changes.outputs.function == 'true'
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push ${{ env.IMAGE }}
+        if: steps.changes.outputs.function == 'true'
+        id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: newrelic-metrics-function
+          file: newrelic-metrics-function/Dockerfile
+          # OCI Functions GENERIC_X86 shape runs linux/amd64 only.
+          platforms: linux/amd64
+          # Single image manifest, so outputs.digest is the digest the stack resolves.
+          provenance: false
+          sbom: false
+          build-args: FUNCTION_BUILD_VERSION=${{ env.FUNCTION_BUILD_VERSION }}
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ env.FUNCTION_BUILD_VERSION }}
+
+      # The digest comes from this build's output, or from the previous release; never from a Docker Hub tag lookup.
+      - name: Pin function image
+        id: pin
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          if [ -n "$DIGEST" ]; then
+            ref="docker.io/${IMAGE}:${FUNCTION_BUILD_VERSION}@${DIGEST}"
+          else
+            ref=$(gh release download --repo "$GITHUB_REPOSITORY" --pattern function_image.lock --output -)
+          fi
+          echo "Pinned function image: $ref"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+  release:
+    needs: image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y zip git gh
 
-      # Run the release script
       - name: Execute release script
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FUNCTION_IMAGE: ${{ needs.image.outputs.ref }}
         run: bash script/release_plan.sh

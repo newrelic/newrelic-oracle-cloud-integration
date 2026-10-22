@@ -1,9 +1,12 @@
 name: Release Stable Image
 
 # Moves the `stable` tag onto an image that is ALREADY published on Docker Hub by
-# dockerhub-image.yml. Nothing is built or rebuilt here: the version tag and `latest`
-# are minted by pushes to main, and this workflow only marks one of those existing
+# release.yml. Nothing is built or rebuilt here: the version tag and `latest` are
+# minted by pushes to main, and this workflow only marks one of those existing
 # images as the stable release.
+#
+# Stack releases default to the image they were released with, pinned by digest, so
+# moving `stable` does not change what an already-released stack version deploys.
 #
 # Manual only -- workflow_dispatch is the single trigger, so cutting a stable release is
 # always an explicit act, never a side effect of a merge.
@@ -88,7 +91,7 @@ jobs:
       # --prefer-index=false makes this a carbon copy of the source manifest. Without it,
       # imagetools create wraps even a single source in a new image index, which publishes
       # :stable under the index's own digest instead of the source digest -- breaking both
-      # the verify step below and the single-HEAD-request resolution that dockerhub-image.yml
+      # the verify step below and the single-HEAD-request resolution that release.yml
       # keeps by building with provenance and sbom off.
       - name: Point stable at ${{ inputs.source_tag }}
         env:
