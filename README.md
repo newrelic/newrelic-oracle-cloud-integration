@@ -53,8 +53,47 @@ After the policy stack is successfully created,the Metrics stack will be created
 
 * A VCN that routes traffic to New Relic (alternatively, use an existing VCN)
 * Application that contains a function
-* Function Application that contains the `metrics-function` to forward metrics. The Docker image is deployed to or pulled from the Container Registry.
+* Function Application that contains the `metrics-function` to forward metrics.
+* A private Container Registry repository in your tenancy. The stack copies the function image (`function_image`, by default `docker.io/newrelic/beyond-oci-metric-function:stable`) into it, and the function runs from that copy.
 * Service Connector that routes metrics to the Function Application
+
+Apply the metrics stack once in each region that sends metrics. Each region gets its own repository, image copy, function and connector hubs, and each function pulls its image only from its own region's registry.
+
+##### Function image and Container Registry access
+
+The stack copies the image into the repository over the Container Registry API, logging in as `<tenancy_namespace>/<username>` with an auth token. The **Function image** section of the stack form controls this:
+
+| Field | Default | Change it when |
+|---|---|---|
+| **Function image** | Uses `docker.io/newrelic/beyond-oci-metric-function:stable`, the image New Relic has released for the integration | New Relic asks you to use a different image, or you want a version tag (for example `:1.5`) to stay on a specific build |
+| **Container Registry auth token** | The stack creates an auth token for the user who last created or edited the stack, keeps it for later upgrades, and deletes it when the stack is destroyed | See [When to enter your own auth token](#when-to-enter-your-own-auth-token) |
+| **Container Registry username** | Uses the user who last created or edited the stack | You enter an auth token: enter the username of the token's owner |
+
+###### When to enter your own auth token
+
+Fill in both **Container Registry auth token** and **Container Registry username** when any of these apply:
+
+* More than one person creates, edits, or applies the stack, or the person who created it might leave. A token the stack creates belongs to whoever last created or edited the stack, and later jobs need that user to still exist.
+* The stack's user already has two auth tokens, the OCI maximum. Each regional stack creates its own token, so one user can set up at most two regions this way.
+* Your organization doesn't allow creating auth tokens.
+
+Use a dedicated user if you can. The same token and username work in every region, so enter them in each regional stack. The username must belong to the token's owner. If the token is later deleted or replaced, enter the new one before the next upgrade.
+
+###### Finding the username and auth token
+
+* **Username:** open the **Profile** menu (top right) and select **User settings** (or **My profile**). Copy the username shown at the top exactly as it appears, without the tenancy namespace; for example `jane@example.com`, also for users who sign in with single sign-on. For a user outside the **Default** identity domain, enter `<identity_domain_name>/<username>`. Tenancies that still federate through Oracle Identity Cloud Service show usernames that start with `oracleidentitycloudservice/`; copy them including that prefix.
+* **Auth token:** on the same page, open **Tokens and keys**, go to **Auth tokens**, and select **Generate token**. Copy the token right away; the Console shows it only once. See [Getting an auth token](https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrygettingauthtoken.htm).
+
+###### Permissions and timing
+
+The user who applies the stack needs permission to manage repositories in the New Relic compartment. When the stack creates the token, the stack's user also needs the **Auth tokens** capability, which is enabled for users by default. A new auth token can take a few minutes to become active, and the stack retries during that time, so the copy step can show `Still creating...` for up to ten minutes. The copy step's output is hidden because it uses the token; if the copy fails, the job log shows the full output in the error.
+
+###### Troubleshooting
+
+* **The copy fails with `rejected the username … and its auth token (401)`:** Container Registry doesn't accept that username and token. Check that the username belongs to the token's owner and is entered exactly as the Console shows it, without extra prefixes, and that the token still exists.
+* **A job fails reading `data.oci_identity_user.registry_user`:** the user who last created or edited the stack no longer exists or can't be read by the user running the job. Edit the stack as your own user, or fill in both registry fields.
+
+To upgrade the function, apply the stack again. If the tag in **Function image** points at a new image, the stack copies it and updates the function in place; otherwise nothing changes. With the default `stable` tag, that happens when New Relic releases a new image; with a version tag, change the tag to upgrade. Upgrades are per region, so apply the stack in every region.
 
 
 Once the stack is created, metrics should be available in the New Relic portal. Open the query builder and run the following query to validate:
