@@ -27,7 +27,14 @@ locals {
   user_api_key           = base64decode(data.oci_secrets_secretbundle.user_api_key.secret_bundle_content[0].content)
   stack_id               = data.oci_resourcemanager_stacks.current_stack.stacks[0].id
 
-  # The function runs from a copy of var.function_image in the tenancy's own Container Registry.
+  # Image this stack version was released with, pinned by digest. Written by script/release_plan.sh;
+  # absent when running from a source checkout, which falls back to the floating tag.
+  function_image_lock = "${path.module}/function_image.lock"
+  source_function_image = var.function_image != "" ? var.function_image : (
+    fileexists(local.function_image_lock) ? trimspace(file(local.function_image_lock)) : "docker.io/newrelic/beyond-oci-metric-function:latest"
+  )
+
+  # The function runs from a copy of local.source_function_image in the tenancy's own Container Registry.
   ocir_host                 = "${var.region}.ocir.io"
   ocir_namespace            = oci_artifacts_container_repository.metrics_function_repo.namespace
   function_image_repository = "newrelic-${lower(var.nr_prefix)}/oci-metrics-forwarder"

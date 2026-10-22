@@ -35,11 +35,11 @@ data "oci_secrets_secretbundle" "user_api_key" {
   provider  = oci.home_provider
 }
 
-# Resolved on every plan, so re-applying the stack notices when the tag points at a new image.
+# Resolved on every plan: it verifies a pinned digest, and notices when a tag points at a new image.
 data "external" "function_image" {
   program = ["python", "${path.module}/image_mirror.py", "resolve"]
   query = {
-    source_image = var.function_image
+    source_image = local.source_function_image
     platform     = "linux/amd64"
   }
 }

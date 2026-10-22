@@ -53,7 +53,7 @@ resource "oci_identity_auth_token" "registry_push" {
 }
 
 # Resource Manager has no Docker, so image_mirror.py copies the image over the registry HTTP API.
-# Runs again whenever var.function_image resolves to a new digest.
+# Runs again whenever local.source_function_image resolves to a new digest.
 resource "null_resource" "mirror_function_image" {
   triggers = {
     source_digest = local.function_image_digest
@@ -63,7 +63,7 @@ resource "null_resource" "mirror_function_image" {
   provisioner "local-exec" {
     command = "python ${path.module}/image_mirror.py copy"
     environment = {
-      SOURCE_IMAGE    = var.function_image
+      SOURCE_IMAGE    = local.source_function_image
       SOURCE_DIGEST   = local.function_image_digest
       DEST_REGISTRY   = local.ocir_host
       DEST_REPOSITORY = "${local.ocir_namespace}/${local.function_image_repository}"

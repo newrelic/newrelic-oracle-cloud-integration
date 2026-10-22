@@ -116,9 +116,8 @@ variables:
   function_image:
     type: string
     title: Function image
-    description: Public image the metrics function runs. The stack copies it into a private Container Registry repository in this region (newrelic-<prefix>/oci-metrics-forwarder), and the function runs from that copy. Keep the default unless New Relic asks you to change it. The default stable tag points at the image New Relic has released for the integration; re-applying the stack picks up a newer one when New Relic moves the tag. Use a version tag (for example :1.5) to stay on a specific build.
-    required: true
-    default: docker.io/newrelic/beyond-oci-metric-function:stable
+    description: Optional. Leave empty to use the image released with this stack version (pinned by digest). The stack copies it into a private Container Registry repository in this region (newrelic-<prefix>/oci-metrics-forwarder), and the function runs from that copy. Set a tag, for example docker.io/newrelic/beyond-oci-metric-function:latest, to track it instead.
+    required: false
 
   registry_username:
     type: string
