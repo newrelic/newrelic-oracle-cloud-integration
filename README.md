@@ -54,7 +54,7 @@ After the policy stack is successfully created,the Metrics stack will be created
 * A VCN that routes traffic to New Relic (alternatively, use an existing VCN)
 * Application that contains a function
 * Function Application that contains the `metrics-function` to forward metrics.
-* A private Container Registry repository in your tenancy. The stack copies the function image (`function_image`, by default `docker.io/newrelic/beyond-oci-metric-function:latest`) into it, and the function runs from that copy.
+* A private Container Registry repository in your tenancy. The stack copies the function image (`function_image`, by default `docker.io/newrelic/beyond-oci-metric-function:stable`) into it, and the function runs from that copy.
 * Service Connector that routes metrics to the Function Application
 
 Apply the metrics stack once in each region that sends metrics. Each region gets its own repository, image copy, function and connector hubs, and each function pulls its image only from its own region's registry.
@@ -65,7 +65,7 @@ The stack copies the image into the repository over the Container Registry API, 
 
 | Field | Default | Change it when |
 |---|---|---|
-| **Function image** | Uses `docker.io/newrelic/beyond-oci-metric-function:latest` | New Relic asks you to use a different image, or you want a version tag (for example `:1.5`) to choose when to upgrade |
+| **Function image** | Uses `docker.io/newrelic/beyond-oci-metric-function:stable`, the image New Relic has released for the integration | New Relic asks you to use a different image, or you want a version tag (for example `:1.5`) to stay on a specific build |
 | **Container Registry auth token** | The stack creates an auth token for the user who last created or edited the stack, keeps it for later upgrades, and deletes it when the stack is destroyed | See [When to enter your own auth token](#when-to-enter-your-own-auth-token) |
 | **Container Registry username** | Uses the user who last created or edited the stack | You enter an auth token: enter the username of the token's owner |
 
@@ -93,7 +93,7 @@ The user who applies the stack needs permission to manage repositories in the Ne
 * **The copy fails with `rejected the username … and its auth token (401)`:** Container Registry doesn't accept that username and token. Check that the username belongs to the token's owner and is entered exactly as the Console shows it, without extra prefixes, and that the token still exists.
 * **A job fails reading `data.oci_identity_user.registry_user`:** the user who last created or edited the stack no longer exists or can't be read by the user running the job. Edit the stack as your own user, or fill in both registry fields.
 
-To upgrade the function, apply the stack again. If the tag in **Function image** points at a new image, the stack copies it and updates the function in place; otherwise nothing changes. Upgrades are per region, so apply the stack in every region.
+To upgrade the function, apply the stack again. If the tag in **Function image** points at a new image, the stack copies it and updates the function in place; otherwise nothing changes. With the default `stable` tag, that happens when New Relic releases a new image; with a version tag, change the tag to upgrade. Upgrades are per region, so apply the stack in every region.
 
 
 Once the stack is created, metrics should be available in the New Relic portal. Open the query builder and run the following query to validate:

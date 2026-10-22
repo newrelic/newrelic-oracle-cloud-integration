@@ -52,8 +52,8 @@ variable "payload_link" {
 
 variable "function_image" {
   type        = string
-  default     = "docker.io/newrelic/beyond-oci-metric-function:latest"
-  description = "Public image for the metrics function. The stack copies it into a private Container Registry repository in your tenancy and runs the function from there. Re-applying the stack picks up a new image pushed under the same tag."
+  default     = "docker.io/newrelic/beyond-oci-metric-function:stable"
+  description = "Public image for the metrics function. The stack copies it into a private Container Registry repository in your tenancy and runs the function from there. Re-applying the stack picks up the image New Relic has promoted to the stable tag; use a version tag (for example :1.5) to stay on a specific build."
 }
 
 variable "current_user_ocid" {
