@@ -45,6 +45,16 @@ data "external" "function_image" {
 }
 
 data "oci_identity_user" "registry_user" {
-  count   = var.registry_username == "" ? 1 : 0
-  user_id = var.current_user_ocid
+  count    = var.registry_username == "" ? 1 : 0
+  user_id  = var.current_user_ocid
+  provider = oci.home_provider
+
+  lifecycle {
+    # The provider turns a 404 into an empty result instead of an error, and OCI also answers 404
+    # when the user running the job isn't allowed to read this user.
+    postcondition {
+      condition     = self.name != null
+      error_message = "Couldn't read the user who last created or edited this stack (${var.current_user_ocid}), whose username the stack uses to log in to Container Registry. This usually means a different user is running this job and isn't allowed to read that user, or that user no longer exists. To fix it, either edit the stack as your own user and save it, then run the job again, or fill in both Container Registry username and Container Registry auth token."
+    }
+  }
 }

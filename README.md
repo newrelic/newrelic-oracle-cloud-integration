@@ -91,7 +91,7 @@ The user who applies the stack needs permission to manage repositories in the Ne
 ###### Troubleshooting
 
 * **The copy fails with `rejected the username … and its auth token (401)`:** Container Registry doesn't accept that username and token. Check that the username belongs to the token's owner and is entered exactly as the Console shows it, without extra prefixes, and that the token still exists.
-* **A job fails reading `data.oci_identity_user.registry_user`:** the user who last created or edited the stack no longer exists or can't be read by the user running the job. Edit the stack as your own user, or fill in both registry fields.
+* **A plan fails with `Couldn't read the user who last created or edited this stack`:** Resource Manager saves the user who creates or edits the stack, but runs each job as the user who starts it. The user running the job can't read the saved user, usually because someone else created or last edited the stack and the job's user isn't allowed to read other users, or because the saved user no longer exists. Edit the stack as your own user and save it, then run the job again, or fill in both registry fields.
 
 Each stack release pins the function image by digest (shown in the release notes and the `function_image.lock` asset). To upgrade the function, update the stack to a newer release and apply it. To track a tag instead, set **Function image** to `docker.io/newrelic/beyond-oci-metric-function:latest`; re-applying the stack then picks up whatever that tag points to. Either way the stack copies the new image and updates the function in place, and upgrades are per region, so apply the stack in every region.
 
