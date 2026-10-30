@@ -3,3 +3,5 @@ trivy-results.sarif
 
 # Written by script/release_plan.sh into the release zip only
 newrelic-metrics-setup/function_image.lock
+
+__pycache__/

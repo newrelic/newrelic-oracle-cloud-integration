@@ -1,0 +1,4 @@
+{
+  "_comment": "PLACEHOLDER (NR-637451): replace with the JWKS oci-signer publishes for the function image's signing key, copied unchanged from publickeys.newrelic.com. Until then the stack refuses every image.",
+  "keys": []
+}
