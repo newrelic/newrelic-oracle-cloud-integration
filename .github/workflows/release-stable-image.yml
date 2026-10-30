@@ -19,7 +19,11 @@ name: Release Stable Image
 # single reviewer is enough. Required reviewers are configured in repo
 # Settings > Environments.
 #
-# Requires DOCKERHUB_USERNAME and DOCKERHUB_TOKEN in the production-environment secrets.
+# Only an image with a valid New Relic signature can become stable: the job verifies the source
+# digest before moving the tag.
+#
+# Requires DOCKERHUB_USERNAME and DOCKERHUB_TOKEN in the production-environment secrets, and
+# FUNCTION_IMAGE_SIGNING_JWKS_URL in its variables.
 
 on:
   workflow_dispatch:
@@ -65,7 +69,16 @@ jobs:
       IMAGE: newrelic/beyond-oci-metric-function
       SOURCE_TAG: ${{ inputs.source_tag }}
     steps:
-      # No checkout and no build step: this job touches registry metadata only.
+      # Checked out only for script/verify_function_image.sh; nothing is built here, and this job
+      # touches registry metadata only.
+      - name: Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v2.6.5
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -82,6 +95,12 @@ jobs:
           fi
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
           echo "Promoting $IMAGE:$SOURCE_TAG ($digest)"
+
+      - name: Verify ${{ inputs.source_tag }} is signed by New Relic
+        env:
+          DIGEST: ${{ steps.source.outputs.digest }}
+          SIGNING_JWKS_URL: ${{ vars.FUNCTION_IMAGE_SIGNING_JWKS_URL }}
+        run: script/verify_function_image.sh "docker.io/$IMAGE@$DIGEST"
 
       # Copies the existing manifest onto the stable tag; no layers are rebuilt or
       # re-uploaded, so :stable and the source tag share one digest. Sourced by digest

@@ -2,6 +2,13 @@ name: Release
 
 # Publishes the function image to Docker Hub when it changed, then cuts the stack release with that
 # image pinned by digest. When the function did not change, the pin carries over from the previous release.
+#
+# Every pinned image is signed by New Relic's OCI signing service (oci-signer) and its signature is
+# verified before the release is cut, so a release never names an image the stack cannot verify.
+# Requires, in the production-environment:
+#   secrets NR_SYSTEM_IDENTITY_CLIENT_ID, NR_SYSTEM_IDENTITY_PRIVATE_KEY  system identity allowed to sign
+#   vars    OCI_SIGNER_CLIENT                                             this repository's oci-signer client
+#   vars    FUNCTION_IMAGE_SIGNING_JWKS_URL                               public keys of its signing key
 
 on:
   push:
@@ -66,9 +73,9 @@ jobs:
           sbom: false
           build-args: FUNCTION_BUILD_VERSION=${{ env.FUNCTION_BUILD_VERSION }}
           push: true
-          tags: |
-            ${{ env.IMAGE }}:latest
-            ${{ env.IMAGE }}:${{ env.FUNCTION_BUILD_VERSION }}
+          # Only the version tag: latest moves once the image is signed, so it never points at an
+          # image that fails verification.
+          tags: ${{ env.IMAGE }}:${{ env.FUNCTION_BUILD_VERSION }}
 
       # The digest comes from this build's output, or from the previous release; never from a Docker Hub tag lookup.
       - name: Pin function image
@@ -84,6 +91,48 @@ jobs:
           fi
           echo "Pinned function image: $ref"
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          # v2 reads the sha256-<digest>.sig signatures oci-signer writes.
+          cosign-release: v2.6.5
+
+      # A fresh build is always signed. A carried-over pin is signed only if it has no valid
+      # signature yet (an image published before signing existed); it came from this repository's
+      # own release asset, the same trust root the pin already relies on.
+      - name: Sign function image
+        env:
+          REF: ${{ steps.pin.outputs.ref }}
+          BUILT: ${{ steps.build.outputs.digest != '' }}
+          SIGNING_JWKS_URL: ${{ vars.FUNCTION_IMAGE_SIGNING_JWKS_URL }}
+          OCI_SIGNER_CLIENT: ${{ vars.OCI_SIGNER_CLIENT }}
+          NR_CLIENT_ID: ${{ secrets.NR_SYSTEM_IDENTITY_CLIENT_ID }}
+          NR_PRIVATE_KEY_B64: ${{ secrets.NR_SYSTEM_IDENTITY_PRIVATE_KEY }}
+        run: |
+          if [ "$BUILT" = "true" ] || ! script/verify_function_image.sh "$REF"; then
+            script/sign_function_image.sh "$REF"
+          fi
+
+      - name: Verify function image signature
+        env:
+          REF: ${{ steps.pin.outputs.ref }}
+          SIGNING_JWKS_URL: ${{ vars.FUNCTION_IMAGE_SIGNING_JWKS_URL }}
+        run: script/verify_function_image.sh "$REF"
+
+      # Same carbon copy as release-stable-image.yml: --prefer-index=false keeps latest on the
+      # version tag's digest instead of wrapping it in a new index.
+      - name: Point latest at the signed image
+        if: steps.changes.outputs.function == 'true'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          docker buildx imagetools create --prefer-index=false --tag "$IMAGE:latest" "$IMAGE@$DIGEST"
+          actual=$(docker buildx imagetools inspect "$IMAGE:latest" --format '{{.Manifest.Digest}}')
+          if [[ "$actual" != "$DIGEST" ]]; then
+            echo "Error: $IMAGE:latest resolved to $actual, expected $DIGEST."
+            exit 1
+          fi
 
   release:
     needs: image
