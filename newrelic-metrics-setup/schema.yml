@@ -20,6 +20,7 @@ variableGroups:
   - title: "Function image"
     variables:
       - ${function_image}
+      - ${verify_function_image_signature}
       - ${registry_username}
       - ${registry_auth_token}
   - title: "Hidden"
@@ -117,6 +118,13 @@ variables:
     type: string
     title: Function image
     description: Optional. Leave empty to use the image released with this stack version (pinned by digest). The stack copies it into a private Container Registry repository in this region (newrelic-<prefix>/oci-metrics-forwarder), and the function runs from that copy. Set a tag, for example docker.io/newrelic/beyond-oci-metric-function:latest, to track it instead.
+    required: false
+
+  verify_function_image_signature:
+    type: boolean
+    title: Verify function image signature
+    description: Deploy the function image only if it carries a New Relic signature. Leave on unless Function image points at an image you built yourself; for a copy of New Relic's image hosted in your own registry, copy its sha256-<digest>.sig signature tag with it instead.
+    default: true
     required: false
 
   registry_username:

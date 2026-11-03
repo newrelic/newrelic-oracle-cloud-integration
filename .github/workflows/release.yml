@@ -120,6 +120,15 @@ jobs:
           SIGNING_JWKS_URL: ${{ vars.FUNCTION_IMAGE_SIGNING_JWKS_URL }}
         run: script/verify_function_image.sh "$REF"
 
+      # The same check the stack runs before deploying, against the key URL the stack uses:
+      # catches a wrong URL or a signature format the stack's verifier does not accept.
+      - name: Verify with the stack's own verifier
+        env:
+          REF: ${{ steps.pin.outputs.ref }}
+        run: |
+          jq -n --arg ref "$REF" '{source_image: $ref, platform: "linux/amd64"}' \
+            | python3 newrelic-metrics-setup/image_mirror.py resolve
+
       # Same carbon copy as release-stable-image.yml: --prefer-index=false keeps latest on the
       # version tag's digest instead of wrapping it in a new index.
       - name: Point latest at the signed image
