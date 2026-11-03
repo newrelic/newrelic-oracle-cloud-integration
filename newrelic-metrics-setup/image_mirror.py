@@ -11,7 +11,7 @@ Modes:
            "verify_signature"} from stdin and prints {"digest", "tag"}: the digest of the
            platform-specific manifest and the tag to push it under. Fails unless that digest
            carries a New Relic signature (see image_signature.py), unless verify_signature is
-           "false". Read-only.
+           "false". Read-only apart from fetching New Relic's public signing keys.
   copy     Called from a local-exec provisioner. Copies SOURCE_DIGEST (with its config and
            layers) to DEST_REGISTRY/DEST_REPOSITORY:DEST_TAG. Settings come from environment
            variables so the registry password never appears on the command line.
@@ -32,7 +32,10 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-import image_signature
+# image_signature.py sits next to this file. Found by path, so the import also works when Python
+# leaves the script's directory off sys.path (-I, -P, PYTHONSAFEPATH).
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import image_signature  # noqa: E402
 
 OCI_INDEX = "application/vnd.oci.image.index.v1+json"
 OCI_MANIFEST = "application/vnd.oci.image.manifest.v1+json"
@@ -50,7 +53,8 @@ AUTH_PROPAGATION_SECONDS = int(os.environ.get("AUTH_PROPAGATION_SECONDS", "600")
 # image is pulled from, so a copy of the image hosted elsewhere verifies if its signature was
 # copied with it.
 SIGNED_REPOSITORY = "docker.io/newrelic/beyond-oci-metric-function"
-SIGNING_KEYS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "function_image_keys.json")
+# Public keys of the oci-signer key that signs it. Key names in this URL are lowercase.
+SIGNING_KEYS_URL = "https://publickeys.newrelic.com/g/agent-control-oci/global/beyond-oci-metric-function/jwks.json"
 
 
 class RegistryError(Exception):
@@ -330,8 +334,14 @@ def resolve(source_image, platform, verify_signature=True):
     # copy() only ever receives a digest this check passed in the same run.
     if verify_signature:
         try:
-            kid = image_signature.verify(source, manifest_digest, SIGNED_REPOSITORY,
-                                         image_signature.load_keys(SIGNING_KEYS))
+            keys = image_signature.fetch_keys(SIGNING_KEYS_URL)
+        except image_signature.SignatureError as e:
+            raise RegistryError(
+                "could not read New Relic's image signing keys: %s. The stack checks the function "
+                "image's signature against them, so the Resource Manager job needs HTTPS access to "
+                "publickeys.newrelic.com." % e)
+        try:
+            kid = image_signature.verify(source, manifest_digest, SIGNED_REPOSITORY, keys)
         except image_signature.SignatureError as e:
             raise RegistryError(
                 "%s (%s) is not signed by New Relic: %s. The stack deploys only images New Relic "

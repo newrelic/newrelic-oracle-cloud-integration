@@ -91,12 +91,13 @@ The user who applies the stack needs permission to manage repositories in the Ne
 
 ###### Image signature
 
-New Relic signs every function image it publishes. Before copying an image, the stack checks its signature against the New Relic public key included in the stack, and stops without changing anything if the image isn't signed by New Relic. The check needs nothing besides the registry the image comes from.
+New Relic signs every function image it publishes. Before copying an image, the stack checks its signature against New Relic's public signing keys, and stops without changing anything if the image isn't signed by New Relic. The stack reads the keys from `publickeys.newrelic.com`, so the Resource Manager job needs HTTPS access to that host as well as to the image's registry.
 
 If you host a copy of New Relic's image in your own registry, copy its signature with it: the signature is the `sha256-<digest>.sig` tag next to the image, and tools such as `crane copy` or `cosign copy` copy both. Turn off **Verify function image signature** only for an image you built yourself.
 
 ###### Troubleshooting
 
+* **A plan fails with `could not read New Relic's image signing keys`:** the Resource Manager job couldn't download New Relic's public signing keys from `publickeys.newrelic.com`. Allow HTTPS to that host from the job's network, then run the job again.
 * **A plan fails with `is not signed by New Relic`:** the image in **Function image** has no valid New Relic signature in the registry it comes from. Use the default image or a New Relic tag on Docker Hub, copy the signature along with a re-hosted image, or turn off **Verify function image signature** for an image you built yourself.
 
 * **The copy fails with `rejected the username … and its auth token (401)`:** Container Registry doesn't accept that username and token. Check that the username belongs to the token's owner and is entered exactly as the Console shows it, without extra prefixes, and that the token still exists.

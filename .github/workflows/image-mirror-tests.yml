@@ -7,7 +7,6 @@ on:
   pull_request:
     paths:
       - 'newrelic-metrics-setup/*.py'
-      - 'newrelic-metrics-setup/function_image_keys.json'
       - 'tests/**'
       - '.github/workflows/image-mirror-tests.yml'
 

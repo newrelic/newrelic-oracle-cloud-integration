@@ -4,10 +4,9 @@ Checks that a function image was signed by New Relic before image_mirror.py copi
 New Relic signs every image it publishes with its OCI signing service. The signature is a cosign
 "simple signing" signature stored next to the image under the tag sha256-<hex>.sig: a manifest
 whose layers each hold a payload naming the image digest, with an Ed25519 signature over that
-payload in the layer annotation. This verifies it against the public keys in
-function_image_keys.json (the JWKS New Relic publishes for the key), offline: nothing besides the
-image's own registry is contacted, so it works in realms without access to public Sigstore
-services.
+payload in the layer annotation. This verifies it against the public keys New Relic publishes for
+that signing key (a JWKS at publickeys.newrelic.com), read when the stack runs so a rotated key is
+picked up without a new stack release. Public Sigstore services are not used.
 
 Standard library only, like image_mirror.py: Resource Manager jobs cannot install packages, so
 Ed25519 verification is implemented here from RFC 8032.
@@ -16,13 +15,20 @@ import base64
 import hashlib
 import json
 import os
+import socket
 import tempfile
+import time
+import urllib.error
+import urllib.request
 
 SIMPLE_SIGNING = "application/vnd.dev.cosign.simplesigning.v1+json"
 SIGNATURE_ANNOTATION = "dev.cosignproject.cosign/signature"
 SIGNATURE_TYPE = "cosign container image signature"
-# Signature payloads are a few hundred bytes; anything larger is not one.
+# Signature payloads and key sets are a few hundred bytes; anything larger is not one.
 MAX_PAYLOAD_BYTES = 64 * 1024
+MAX_JWKS_BYTES = 64 * 1024
+KEYS_ATTEMPTS = 3
+KEYS_TIMEOUT_SECONDS = 30
 
 
 class SignatureError(Exception):
@@ -111,10 +117,14 @@ def _b64url(value):
     return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
 
 
-def load_keys(path):
-    """Returns [(kid, public key bytes)] for the Ed25519 keys in a JWKS file."""
-    with open(path) as f:
-        jwks = json.load(f)
+def parse_keys(data, source):
+    """Returns [(kid, public key bytes)] for the Ed25519 keys in a JWKS document."""
+    if len(data) > MAX_JWKS_BYTES:
+        raise SignatureError("%s is larger than a key set" % source)
+    try:
+        jwks = json.loads(data)
+    except ValueError:
+        raise SignatureError("%s is not a JSON key set" % source)
     keys = []
     for key in jwks.get("keys", []):
         if key.get("kty") != "OKP" or key.get("crv") != "Ed25519" or not key.get("x"):
@@ -123,8 +133,27 @@ def load_keys(path):
         if len(x) == 32:
             keys.append((key.get("kid") or "?", x))
     if not keys:
-        raise SignatureError("%s has no New Relic signing keys" % path)
+        raise SignatureError("%s has no New Relic signing keys" % source)
     return keys
+
+
+def fetch_keys(url):
+    """Reads the JWKS New Relic publishes at url and returns its Ed25519 keys."""
+    if not url.startswith("https://"):
+        raise SignatureError("signing keys must come over HTTPS, not %s" % url)
+    request = urllib.request.Request(url, headers={
+        "Accept": "application/json", "User-Agent": "newrelic-oci-image-mirror"})
+    for attempt in range(1, KEYS_ATTEMPTS + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=KEYS_TIMEOUT_SECONDS) as response:
+                return parse_keys(response.read(MAX_JWKS_BYTES + 1), url)
+        except urllib.error.HTTPError as e:
+            if e.code < 500 or attempt == KEYS_ATTEMPTS:
+                raise SignatureError("%s returned HTTP %s" % (url, e.code))
+        except (urllib.error.URLError, ConnectionError, socket.timeout) as e:
+            if attempt == KEYS_ATTEMPTS:
+                raise SignatureError("could not reach %s: %s" % (url, getattr(e, "reason", e)))
+        time.sleep(2 ** attempt)
 
 
 # --- cosign signatures ----------------------------------------------------------------------

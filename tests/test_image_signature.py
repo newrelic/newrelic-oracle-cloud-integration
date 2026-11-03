@@ -9,7 +9,6 @@ import io
 import json
 import os
 import sys
-import tempfile
 import unittest
 from unittest import mock
 
@@ -155,35 +154,89 @@ class Ed25519Test(unittest.TestCase):
         self.assertFalse(sig.ed25519_verify(public, message, non_canonical + signature[32:]))
 
 
-class LoadKeysTest(unittest.TestCase):
-    def write(self, jwks):
-        f = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
-        json.dump(jwks, f)
-        f.close()
-        self.addCleanup(os.remove, f.name)
-        return f.name
+def fixture_keys():
+    with open(os.path.join(FIXTURES, "infrastructure_agent_jwks.json"), "rb") as f:
+        return sig.parse_keys(f.read(), "fixture")
 
-    def test_loads_published_jwks(self):
-        keys = sig.load_keys(os.path.join(FIXTURES, "infrastructure_agent_jwks.json"))
+
+class ParseKeysTest(unittest.TestCase):
+    def test_parses_published_jwks(self):
+        keys = fixture_keys()
         self.assertEqual([kid for kid, _ in keys], ["NRInfraAgent/0"])
         self.assertEqual(len(keys[0][1]), 32)
 
-    def test_skips_other_key_types_and_fails_when_none_left(self):
-        path = self.write({"keys": [{"kty": "EC", "crv": "P-256", "x": "AAAA", "y": "AAAA"}]})
-        with self.assertRaises(sig.SignatureError):
-            sig.load_keys(path)
+    def test_keeps_every_published_version(self):
+        # After a rotation the JWKS lists the new version first and keeps older ones.
+        jwks = {"keys": [
+            {"kty": "OKP", "crv": "Ed25519", "kid": "k/1", "x": base64.urlsafe_b64encode(_keypair(OTHER_SEED)[2]).decode().rstrip("=")},
+            {"kty": "OKP", "crv": "Ed25519", "kid": "k/0", "x": base64.urlsafe_b64encode(TEST_KEY[1]).decode().rstrip("=")},
+        ]}
+        self.assertEqual([kid for kid, _ in sig.parse_keys(json.dumps(jwks).encode(), "test")], ["k/1", "k/0"])
 
-    def test_placeholder_refuses_everything(self):
-        path = self.write({"_comment": "placeholder", "keys": []})
-        with self.assertRaises(sig.SignatureError):
-            sig.load_keys(path)
+    def test_skips_other_key_types_and_fails_when_none_left(self):
+        jwks = {"keys": [{"kty": "EC", "crv": "P-256", "x": "AAAA", "y": "AAAA"}]}
+        with self.assertRaisesRegex(sig.SignatureError, "no New Relic signing keys"):
+            sig.parse_keys(json.dumps(jwks).encode(), "test")
+
+    def test_rejects_non_json_and_oversized(self):
+        with self.assertRaisesRegex(sig.SignatureError, "not a JSON key set"):
+            sig.parse_keys(b"<html>", "test")
+        with self.assertRaisesRegex(sig.SignatureError, "larger"):
+            sig.parse_keys(b" " * (sig.MAX_JWKS_BYTES + 1), "test")
+
+
+class FakeResponse(io.BytesIO):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+
+class FetchKeysTest(unittest.TestCase):
+    URL = "https://publickeys.newrelic.com/g/agent-control-oci/global/test/jwks.json"
+
+    def setUp(self):
+        with open(os.path.join(FIXTURES, "infrastructure_agent_jwks.json"), "rb") as f:
+            self.jwks = f.read()
+        patcher = mock.patch.object(sig.time, "sleep")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def http_error(self, code):
+        return sig.urllib.error.HTTPError(self.URL, code, "error", {}, io.BytesIO())
+
+    def test_fetches_keys(self):
+        with mock.patch.object(sig.urllib.request, "urlopen", return_value=FakeResponse(self.jwks)) as urlopen:
+            self.assertEqual([kid for kid, _ in sig.fetch_keys(self.URL)], ["NRInfraAgent/0"])
+        self.assertEqual(urlopen.call_args[0][0].full_url, self.URL)
+
+    def test_retries_server_errors_and_timeouts(self):
+        responses = [self.http_error(503), sig.socket.timeout("timed out"), FakeResponse(self.jwks)]
+        with mock.patch.object(sig.urllib.request, "urlopen", side_effect=responses):
+            self.assertEqual(len(sig.fetch_keys(self.URL)), 1)
+
+    def test_missing_key_set_fails_without_retrying(self):
+        with mock.patch.object(sig.urllib.request, "urlopen", side_effect=[self.http_error(404)]):
+            with self.assertRaisesRegex(sig.SignatureError, "HTTP 404"):
+                sig.fetch_keys(self.URL)
+
+    def test_unreachable_after_retries(self):
+        errors = [sig.urllib.error.URLError("no route")] * sig.KEYS_ATTEMPTS
+        with mock.patch.object(sig.urllib.request, "urlopen", side_effect=errors):
+            with self.assertRaisesRegex(sig.SignatureError, "could not reach"):
+                sig.fetch_keys(self.URL)
+
+    def test_requires_https(self):
+        with self.assertRaisesRegex(sig.SignatureError, "HTTPS"):
+            sig.fetch_keys("http://publickeys.newrelic.com/jwks.json")
 
 
 class VerifyTest(unittest.TestCase):
     def test_real_oci_signer_signature(self):
         with open(os.path.join(FIXTURES, "infrastructure_agent_signature_manifest.json")) as f:
             manifest = json.load(f)
-        keys = sig.load_keys(os.path.join(FIXTURES, "infrastructure_agent_jwks.json"))
+        keys = fixture_keys()
         registry = FakeRegistry(manifest=manifest)
         self.assertEqual(sig.verify(registry, REAL_DIGEST, REAL_REPOSITORY, keys), "NRInfraAgent/0")
         self.assertEqual(registry.requested, ["sha256-" + REAL_DIGEST.split(":")[1] + ".sig"])
@@ -191,7 +244,7 @@ class VerifyTest(unittest.TestCase):
     def test_real_signature_is_not_accepted_for_another_repository(self):
         with open(os.path.join(FIXTURES, "infrastructure_agent_signature_manifest.json")) as f:
             manifest = json.load(f)
-        keys = sig.load_keys(os.path.join(FIXTURES, "infrastructure_agent_jwks.json"))
+        keys = fixture_keys()
         with self.assertRaisesRegex(sig.SignatureError, "infrastructure-agent-artifacts"):
             sig.verify(FakeRegistry(manifest=manifest), REAL_DIGEST, REPOSITORY, keys)
 
@@ -279,21 +332,27 @@ class ResolveTest(unittest.TestCase):
         self.addCleanup(patcher.stop)
 
     def test_verified_image_resolves(self):
-        with mock.patch.object(sig, "load_keys", return_value=[TEST_KEY]), \
+        with mock.patch.object(sig, "fetch_keys", return_value=[TEST_KEY]), \
                 mock.patch.object(sig, "verify", return_value="test/0") as verify:
             digest, tag = image_mirror.resolve("docker.io/newrelic/beyond-oci-metric-function:1.42", "linux/amd64")
         self.assertEqual((digest, tag), (self.digest, "1.42"))
         self.assertEqual(verify.call_args[0][1:3], (self.digest, image_mirror.SIGNED_REPOSITORY))
 
     def test_unsigned_image_fails(self):
-        with mock.patch.object(sig, "load_keys", return_value=[TEST_KEY]), \
+        with mock.patch.object(sig, "fetch_keys", return_value=[TEST_KEY]), \
                 mock.patch.object(sig, "verify", side_effect=sig.SignatureError("no signature found")):
             with self.assertRaisesRegex(image_mirror.RegistryError, "not signed by New Relic"):
                 image_mirror.resolve("docker.io/newrelic/beyond-oci-metric-function:1.42", "linux/amd64")
 
+    def test_unreachable_keys_fail_with_a_network_hint(self):
+        with mock.patch.object(sig, "fetch_keys", side_effect=sig.SignatureError("could not reach it")):
+            with self.assertRaisesRegex(image_mirror.RegistryError, "publickeys.newrelic.com"):
+                image_mirror.resolve("docker.io/newrelic/beyond-oci-metric-function:1.42", "linux/amd64")
+
     def test_verification_can_be_turned_off(self):
-        with mock.patch.object(sig, "verify") as verify:
+        with mock.patch.object(sig, "fetch_keys") as fetch_keys, mock.patch.object(sig, "verify") as verify:
             image_mirror.resolve("docker.io/newrelic/beyond-oci-metric-function:1.42", "linux/amd64", False)
+        fetch_keys.assert_not_called()
         verify.assert_not_called()
 
     def test_main_verifies_unless_query_says_false(self):
@@ -308,11 +367,11 @@ class ResolveTest(unittest.TestCase):
             self.assertIs(resolve.call_args[0][2], expected, query)
 
 
-class ShippedKeysTest(unittest.TestCase):
-    def test_stack_ships_a_signing_key(self):
-        # Fails while function_image_keys.json is the placeholder: the stack would refuse every
-        # image. Replace it with the published JWKS of the function image's signing key.
-        self.assertTrue(sig.load_keys(image_mirror.SIGNING_KEYS))
+class SigningKeysUrlTest(unittest.TestCase):
+    def test_url_is_https_and_lowercase(self):
+        # publickeys.newrelic.com serves key names in lowercase only.
+        self.assertTrue(image_mirror.SIGNING_KEYS_URL.startswith("https://publickeys.newrelic.com/g/"))
+        self.assertEqual(image_mirror.SIGNING_KEYS_URL, image_mirror.SIGNING_KEYS_URL.lower())
 
 
 if __name__ == "__main__":

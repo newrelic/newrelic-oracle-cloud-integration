@@ -120,8 +120,8 @@ jobs:
           SIGNING_JWKS_URL: ${{ vars.FUNCTION_IMAGE_SIGNING_JWKS_URL }}
         run: script/verify_function_image.sh "$REF"
 
-      # The same check the stack runs before deploying, with the keys the stack ships: catches a
-      # stale key file or a signature format the stack's verifier does not accept.
+      # The same check the stack runs before deploying, against the key URL the stack uses:
+      # catches a wrong URL or a signature format the stack's verifier does not accept.
       - name: Verify with the stack's own verifier
         env:
           REF: ${{ steps.pin.outputs.ref }}
