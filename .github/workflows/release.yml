@@ -7,6 +7,8 @@ name: Release
 # verified before the release is cut, so a release never names an image the stack cannot verify.
 # Requires, in the production-environment:
 #   secrets NR_SYSTEM_IDENTITY_CLIENT_ID, NR_SYSTEM_IDENTITY_PRIVATE_KEY  system identity allowed to sign
+#     (system identity c9dd4244-9bf0-494e-b0b9-19e2fa6a215a; its private key is kept in the CMP team
+#     1Password vault, linked from NR-637451)
 #   vars    OCI_SIGNER_CLIENT                                             this repository's oci-signer client
 #   vars    FUNCTION_IMAGE_SIGNING_JWKS_URL                               public keys of its signing key
 
