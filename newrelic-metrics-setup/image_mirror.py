@@ -345,9 +345,10 @@ def resolve(source_image, platform, verify_signature=True):
         except image_signature.SignatureError as e:
             raise RegistryError(
                 "%s (%s) is not signed by New Relic: %s. The stack deploys only images New Relic "
-                "signed. If Function image points at an image you built or host yourself, copy "
-                "its sha256-<digest>.sig signature tag along with it, or turn off Verify function "
-                "image signature." % (source_image, manifest_digest, e))
+                "signed. If Function image points at a copy of New Relic's image in your own "
+                "registry, copy its sha256-<digest>.sig signature tag along with it. For an image "
+                "you built yourself, set the stack variable verify_function_image_signature to "
+                "false (see the stack's README)." % (source_image, manifest_digest, e))
         log("%s carries a New Relic signature (key %s)" % (manifest_digest, kid))
     # A digest-pinned source has no tag; derive a stable one from the digest.
     dest_tag = tag or "sha256-" + manifest_digest.split(":", 1)[1][:12]

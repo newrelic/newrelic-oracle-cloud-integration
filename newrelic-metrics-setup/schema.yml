@@ -20,13 +20,13 @@ variableGroups:
   - title: "Function image"
     variables:
       - ${function_image}
-      - ${verify_function_image_signature}
       - ${registry_username}
       - ${registry_auth_token}
   - title: "Hidden"
     visible: false
     variables:
       - ${current_user_ocid}
+      - ${verify_function_image_signature}
 
 variables:
   tenancy_ocid:
@@ -123,9 +123,10 @@ variables:
   verify_function_image_signature:
     type: boolean
     title: Verify function image signature
-    description: Deploy the function image only if it carries a New Relic signature. Leave on unless Function image points at an image you built yourself; for a copy of New Relic's image hosted in your own registry, copy its sha256-<digest>.sig signature tag with it instead.
+    description: Deploy the function image only if it carries a New Relic signature. Not shown on the form; set it to false through the Resource Manager API only for an image you built yourself.
     default: true
     required: false
+    visible: false
 
   registry_username:
     type: string
