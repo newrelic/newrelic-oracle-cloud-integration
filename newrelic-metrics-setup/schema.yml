@@ -117,7 +117,7 @@ variables:
   function_image:
     type: string
     title: Function image
-    description: Optional. Leave empty to use the image released with this stack version (pinned by digest). The stack copies it into a private Container Registry repository in this region (newrelic-<prefix>/oci-metrics-forwarder), and the function runs from that copy. Set a tag, for example docker.io/newrelic/beyond-oci-metric-function:latest, to track it instead.
+    description: Optional. Leave empty to use the image released with this stack version (pinned by digest). The stack copies it into a private Container Registry repository in this region (newrelic-<prefix>/oci-metrics-forwarder), and the function runs from that copy. Set a tag, for example docker.io/newrelic/beyond-oci-metric-function:latest, to track it instead. Newer functions ship with newer stack versions; to upgrade, download the latest stack from https://github.com/newrelic/newrelic-oracle-cloud-integration/releases/latest and upload it with Edit stack.
     required: false
 
   verify_function_image_signature:
@@ -146,3 +146,23 @@ variables:
     description: Populated by Resource Manager.
     required: false
     visible: false
+
+outputGroups:
+  - title: "Upgrade"
+    outputs:
+      - ${upgrade_stack_link}
+  - title: "Network"
+    outputs:
+      - ${vcn_network_details}
+
+outputs:
+  upgrade_stack_link:
+    type: link
+    title: Latest stack version
+    displayText: Get the latest stack version
+    description: Download newrelic-metrics-setup.zip from the latest release, then use Edit stack to upload it and run Apply in each region to move to the newest function.
+  vcn_network_details:
+    type: json
+    title: Network details
+
+primaryOutputButton: ${upgrade_stack_link}

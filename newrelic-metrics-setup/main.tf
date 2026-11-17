@@ -252,3 +252,9 @@ resource "null_resource" "newrelic_link_account" {
     EOT
 }
 }
+
+# Shown as a button on the stack's Application information tab (schema.yml primaryOutputButton).
+output "upgrade_stack_link" {
+  description = "Where to download the latest version of this stack"
+  value       = "https://github.com/newrelic/newrelic-oracle-cloud-integration/releases/latest"
+}
