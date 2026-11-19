@@ -56,6 +56,12 @@ variable "function_image" {
   description = "Image for the metrics function. Leave empty to use the image this stack version was released with, pinned by digest. Set a tag such as docker.io/newrelic/beyond-oci-metric-function:latest to track it instead; re-applying the stack then picks up whatever that tag points to."
 }
 
+variable "verify_function_image_signature" {
+  type        = bool
+  default     = true
+  description = "Refuse to deploy a function image that does not carry a New Relic signature. Turn off only for an image you built yourself; for a copy of New Relic's image hosted elsewhere, copy its sha256-<digest>.sig tag with it instead."
+}
+
 variable "current_user_ocid" {
   type        = string
   default     = ""

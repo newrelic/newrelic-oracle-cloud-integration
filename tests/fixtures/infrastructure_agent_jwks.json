@@ -1,0 +1,15 @@
+{
+    "keys": [
+        {
+            "kty": "OKP",
+            "alg": null,
+            "use": "sig",
+            "kid": "NRInfraAgent/0",
+            "n": null,
+            "e": null,
+            "x": "hKTkyjJSDSVCvTQleSjHMmIM6zzdc-3I8FBhdGZSgvw",
+            "y": null,
+            "crv": "Ed25519"
+        }
+    ]
+}

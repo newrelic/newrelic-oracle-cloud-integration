@@ -39,8 +39,9 @@ data "oci_secrets_secretbundle" "user_api_key" {
 data "external" "function_image" {
   program = ["python", "${path.module}/image_mirror.py", "resolve"]
   query = {
-    source_image = local.source_function_image
-    platform     = "linux/amd64"
+    source_image     = local.source_function_image
+    platform         = "linux/amd64"
+    verify_signature = var.verify_function_image_signature ? "true" : "false"
   }
 }
 

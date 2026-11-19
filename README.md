@@ -88,12 +88,29 @@ Use a dedicated user if you can. The same token and username work in every regio
 
 The user who applies the stack needs permission to manage repositories in the New Relic compartment. When the stack creates the token, the stack's user also needs the **Auth tokens** capability, which is enabled for users by default. A new auth token can take a few minutes to become active, and the stack retries during that time, so the copy step can show `Still creating...` for up to ten minutes. The copy step's output is hidden because it uses the token; if the copy fails, the job log shows the full output in the error.
 
+###### Image signature
+
+New Relic signs every function image it publishes. Before copying an image, the stack checks its signature against New Relic's public signing keys, and stops without changing anything if the image isn't signed by New Relic. The stack reads the keys from `publickeys.newrelic.com`, so the Resource Manager job needs HTTPS access to that host as well as to the image's registry.
+
+If you host a copy of New Relic's image in your own registry, copy its signature with it: the signature is the `sha256-<digest>.sig` tag next to the image, and tools such as `crane copy` or `cosign copy` copy both.
+
+The check can't be turned off from the stack form. For an image you built yourself, set the stack variable `verify_function_image_signature` to `false` with the OCI CLI. `oci resource-manager stack update --variables` replaces all of the stack's variables, so pass the current ones too:
+
+```bash
+oci resource-manager stack get --stack-id <stack_ocid> --query 'data.variables' > variables.json
+# add "verify_function_image_signature": "false" to variables.json, then:
+oci resource-manager stack update --stack-id <stack_ocid> --variables file://variables.json
+```
+
 ###### Troubleshooting
+
+* **A plan fails with `could not read New Relic's image signing keys`:** the Resource Manager job couldn't download New Relic's public signing keys from `publickeys.newrelic.com`. Allow HTTPS to that host from the job's network, then run the job again.
+* **A plan fails with `is not signed by New Relic`:** the image in **Function image** has no valid New Relic signature in the registry it comes from. Use the default image or a New Relic tag on Docker Hub, copy the signature along with a re-hosted image, or set `verify_function_image_signature` to `false` for an image you built yourself (see [Image signature](#image-signature)).
 
 * **The copy fails with `rejected the username … and its auth token (401)`:** Container Registry doesn't accept that username and token. Check that the username belongs to the token's owner and is entered exactly as the Console shows it, without extra prefixes, and that the token still exists.
 * **A plan fails with `Couldn't read the user who last created or edited this stack`:** Resource Manager saves the user who creates or edits the stack, but runs each job as the user who starts it. The user running the job can't read the saved user, usually because someone else created or last edited the stack and the job's user isn't allowed to read other users, or because the saved user no longer exists. Edit the stack as your own user and save it, then run the job again, or fill in both registry fields.
 
-Each stack release pins the function image by digest (shown in the release notes and the `function_image.lock` asset). To upgrade the function, update the stack to a newer release and apply it. To track a tag instead, set **Function image** to `docker.io/newrelic/beyond-oci-metric-function:latest`; re-applying the stack then picks up whatever that tag points to. Either way the stack copies the new image and updates the function in place, and upgrades are per region, so apply the stack in every region.
+Each stack release pins the function image by digest (shown in the release notes and the `function_image.lock` asset). To upgrade the function, update the stack to a newer release and apply it: download `newrelic-metrics-setup.zip` from the [latest release](https://github.com/newrelic/newrelic-oracle-cloud-integration/releases/latest), then in Resource Manager open the stack, select **Edit stack**, upload the .zip, and run **Apply**. Stacks from this version on show a **Get the latest stack version** button on the stack's **Application information** tab that links there. To track a tag instead, set **Function image** to `docker.io/newrelic/beyond-oci-metric-function:latest`; re-applying the stack then picks up whatever that tag points to. Either way the stack copies the new image and updates the function in place, and upgrades are per region, so apply the stack in every region.
 
 
 Once the stack is created, metrics should be available in the New Relic portal. Open the query builder and run the following query to validate:
